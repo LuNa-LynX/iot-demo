@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+psycopg2-binary
+python-dotenv
+websockets
+asyncpg
+sqlalchemy[asyncio]
+alembic
+paho-mqtt
+boto3
+cryptography
+schedule
+pyjwt
+passlib[bcrypt]
+bcrypt<5.0.0
+

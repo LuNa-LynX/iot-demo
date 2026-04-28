@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Digital Display Unit (DDU)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .ddu-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #2a5298;
+            padding-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #1e3c72;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header .room-info {
+            color: #666;
+            font-size: 1.2em;
+        }
+
+        .status-indicator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .status-dot {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: #10b981;
+        }
+
+        .status-dot.disconnected {
+            background: #ef4444;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .sensors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .sensor-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 25px;
+            border-radius: 15px;
+            color: white;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .sensor-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .sensor-card.alert {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            animation: alert-pulse 1s infinite;
+        }
+
+        @keyframes alert-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+        }
+
+        .sensor-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .sensor-value {
+            font-size: 3em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .sensor-unit {
+            font-size: 1.2em;
+            opacity: 0.8;
+        }
+
+        .alerts-section {
+            background: #fef2f2;
+            border-left: 5px solid #ef4444;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .alerts-section h3 {
+            color: #991b1b;
+            margin-bottom: 10px;
+        }
+
+        .alert-item {
+            color: #991b1b;
+            padding: 5px 0;
+            font-size: 0.9em;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e5e7eb;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="ddu-container">
+        <div class="header">
+            <h1>🏭 DDU - Digital Display Unit</h1>
+            <div class="room-info" id="room-info">Room: Loading...</div>
+            <div class="status-indicator">
+                <span id="status-text">Connecting...</span>
+                <span class="status-dot disconnected" id="status-dot"></span>
+            </div>
+        </div>
+
+        <div class="sensors-grid">
+            <div class="sensor-card" id="temp-card">
+                <div class="sensor-label">Temperature</div>
+                <div class="sensor-value" id="temp-value">--</div>
+                <div class="sensor-unit">°C</div>
+            </div>
+            <div class="sensor-card" id="humidity-card">
+                <div class="sensor-label">Humidity</div>
+                <div class="sensor-value" id="humidity-value">--</div>
+                <div class="sensor-unit">%</div>
+            </div>
+            <div class="sensor-card" id="pressure-card">
+                <div class="sensor-label">Differential Pressure</div>
+                <div class="sensor-value" id="pressure-value">--</div>
+                <div class="sensor-unit">Pa</div>
+            </div>
+            <div class="sensor-card" id="particles-card">
+                <div class="sensor-label">Particles</div>
+                <div class="sensor-value" id="particles-value">--</div>
+                <div class="sensor-unit">/m³</div>
+            </div>
+        </div>
+
+        <div class="alerts-section" id="alerts-section" style="display: none;">
+            <h3>🚨 Active Alerts</h3>
+            <div id="alerts-list"></div>
+        </div>
+
+        <div class="footer">
+            <p>Last Update: <span id="last-update">--</span></p>
+            <p>Connected to EMS Server</p>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+        const WS_URL = 'ws://localhost:8000/ws/cleanroom';
+
+        // Get room ID from URL parameter or default
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('room') || 'Room-1';
+
+        document.getElementById('room-info').textContent = `Room: ${roomId}`;
+
+        let ws = null;
+
+        // Alert thresholds
+        const TEMP_MIN = 18, TEMP_MAX = 25;
+        const HUM_MIN = 40, HUM_MAX = 60;
+        const PRESS_MIN = 8, PRESS_MAX = 20;
+        const PARTICLE_LIMIT = 300;
+
+        function updateSensor(cardId, valueId, value, unit = '') {
+            document.getElementById(valueId).textContent = value.toFixed(1) + (unit ? ' ' + unit : '');
+        }
+
+        function checkAlerts(data) {
+            const alerts = [];
+            const alertsSection = document.getElementById('alerts-section');
+            const alertsList = document.getElementById('alerts-list');
+
+            // Check temperature
+            if (data.temperature < TEMP_MIN || data.temperature > TEMP_MAX) {
+                alerts.push(`Temperature ${data.temperature}°C out of range [${TEMP_MIN}-${TEMP_MAX}°C]`);
+                document.getElementById('temp-card').classList.add('alert');
+            } else {
+                document.getElementById('temp-card').classList.remove('alert');
+            }
+
+            // Check humidity
+            if (data.humidity < HUM_MIN || data.humidity > HUM_MAX) {
+                alerts.push(`Humidity ${data.humidity}% out of range [${HUM_MIN}-${HUM_MAX}%]`);
+                document.getElementById('humidity-card').classList.add('alert');
+            } else {
+                document.getElementById('humidity-card').classList.remove('alert');
+            }
+
+            // Check pressure
+            if (data.pressure < PRESS_MIN || data.pressure > PRESS_MAX) {
+                alerts.push(`Differential Pressure ${data.pressure}Pa out of range [${PRESS_MIN}-${PRESS_MAX}Pa]`);
+                document.getElementById('pressure-card').classList.add('alert');
+            } else {
+                document.getElementById('pressure-card').classList.remove('alert');
+            }
+
+            // Check particles
+            if (data.particles > PARTICLE_LIMIT) {
+                alerts.push(`High particle count: ${data.particles}`);
+                document.getElementById('particles-card').classList.add('alert');
+            } else {
+                document.getElementById('particles-card').classList.remove('alert');
+            }
+
+            // Display alerts
+            if (alerts.length > 0) {
+                alertsSection.style.display = 'block';
+                alertsList.innerHTML = alerts.map(alert => 
+                    `<div class="alert-item">⚠️ ${alert}</div>`
+                ).join('');
+            } else {
+                alertsSection.style.display = 'none';
+            }
+        }
+
+        function processData(data) {
+            // Update sensors
+            updateSensor('temp-card', 'temp-value', data.temperature);
+            updateSensor('humidity-card', 'humidity-value', data.humidity);
+            updateSensor('pressure-card', 'pressure-value', data.pressure);
+            updateSensor('particles-card', 'particles-value', data.particles);
+
+            // Check alerts
+            checkAlerts(data);
+
+            // Update timestamp
+            const now = new Date();
+            document.getElementById('last-update').textContent = now.toLocaleTimeString();
+        }
+
+        function connectWebSocket() {
+            ws = new WebSocket(WS_URL);
+
+            ws.onopen = () => {
+                console.log('WebSocket connected');
+                document.getElementById('status-text').textContent = 'Connected';
+                document.getElementById('status-dot').className = 'status-dot connected';
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    processData(data);
+                } catch (error) {
+                    console.error('Failed to parse WebSocket message:', error);
+                }
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+
+            ws.onclose = () => {
+                console.log('WebSocket disconnected, reconnecting...');
+                document.getElementById('status-text').textContent = 'Disconnected';
+                document.getElementById('status-dot').className = 'status-dot disconnected';
+                setTimeout(connectWebSocket, 3000);
+            };
+
+            // Keep connection alive
+            setInterval(() => {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send('ping');
+                }
+            }, 30000);
+        }
+
+        // Load initial data
+        async function loadInitialData() {
+            try {
+                const response = await fetch(`${API_URL}/logs`);
+                const logs = await response.json();
+                if (logs && logs.length > 0) {
+                    processData(logs[0]);
+                }
+            } catch (error) {
+                console.error('Failed to load initial data:', error);
+            }
+        }
+
+        // Initialize
+        loadInitialData();
+        connectWebSocket();
+    </script>
+</body>
+</html>
+
