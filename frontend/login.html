@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - NanoGuard EMS</title>
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-container {
+            background: #ffffff;
+            width: 100%;
+            max-width: 420px;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .auth-header img {
+            width: 110px;
+            margin-bottom: 20px;
+        }
+
+        .auth-header h1 {
+            font-size: 2rem;
+            margin-bottom: 6px;
+        }
+
+        .auth-header p {
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 14px 12px 42px;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            font-size: 1rem;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            color: #065f46;
+            border: 1px solid #86efac;
+        }
+    </style>
+</head>
+<body>
+
+<div class="auth-container">
+
+    <div class="auth-header">
+        <img src="/static/nanoguard-logo.svg" alt="NanoGuard EMS">
+        <h1>Welcome Back</h1>
+        <p>Login to NanoGuard EMS Dashboard</p>
+    </div>
+
+    <div id="alertBox"></div>
+
+    <form id="loginForm">
+        <div class="form-group">
+            <label>Username</label>
+            <div class="input-wrapper">
+                <i class="fas fa-user"></i>
+                <input type="text" id="username" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Password</label>
+            <div class="input-wrapper">
+                <i class="fas fa-lock"></i>
+                <input type="password" id="password" required>
+            </div>
+        </div>
+
+        <button type="submit">
+            <i class="fas fa-sign-in-alt"></i> Login
+        </button>
+    </form>
+
+</div>
+
+<script>
+    const API_BASE = window.location.origin;
+    const form = document.getElementById("loginForm");
+    const alertBox = document.getElementById("alertBox");
+
+    function showAlert(message, type) {
+        alertBox.innerHTML = `
+            <div class="alert alert-${type}">
+                ${message}
+            </div>
+        `;
+    }
+
+    form.addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+
+        try {
+            const response = await fetch(`${API_BASE}/api/auth/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.detail || "Login failed");
+            }
+
+            localStorage.setItem("access_token", data.access_token);
+            localStorage.setItem("user", JSON.stringify(data.user));
+
+            showAlert("Login successful. Redirecting...", "success");
+
+            setTimeout(() => {
+                window.location.href = "/dashboard";
+            }, 800);
+
+        } catch (err) {
+            showAlert(err.message, "error");
+        }
+    });
+
+    if (localStorage.getItem("access_token")) {
+        window.location.href = "/dashboard";
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,3848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NanoGuard EMS - Enterprise Monitoring Dashboard</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico">
+    <link rel="alternate icon" type="image/svg+xml" href="/static/nanoguard-logo.svg">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Modern Ocean/Teal Theme - Professional & Attractive */
+            --primary-color: #0ea5e9;
+            --primary-dark: #0284c7;
+            --primary-light: #38bdf8;
+            --secondary-color: #06b6d4;
+            --accent-color: #8b5cf6;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #06b6d4;
+            --purple-color: #a855f7;
+            
+            /* Beautiful gradient background */
+            --bg-primary: linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #334155 50%, #475569 75%, #64748b 100%);
+            --bg-secondary: #f1f5f9;
+            --card-bg: rgba(255, 255, 255, 0.98);
+            --card-bg-solid: #ffffff;
+            --card-bg-dark: rgba(15, 23, 42, 0.8);
+            
+            /* Text colors */
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --text-light: #94a3b8;
+            
+            /* Border and hover */
+            --border-color: rgba(226, 232, 240, 0.6);
+            --hover-bg: rgba(14, 165, 233, 0.1);
+            --hover-bg-dark: rgba(14, 165, 233, 0.2);
+            
+            /* Enhanced shadows with color */
+            --shadow-sm: 0 1px 2px 0 rgba(14, 165, 233, 0.1);
+            --shadow-md: 0 4px 6px -1px rgba(14, 165, 233, 0.15), 0 2px 4px -1px rgba(14, 165, 233, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(14, 165, 233, 0.2), 0 4px 6px -2px rgba(14, 165, 233, 0.15);
+            --shadow-xl: 0 20px 25px -5px rgba(14, 165, 233, 0.25), 0 10px 10px -5px rgba(14, 165, 233, 0.15);
+            --shadow-glow: 0 0 30px rgba(14, 165, 233, 0.4);
+            --shadow-glow-success: 0 0 20px rgba(16, 185, 129, 0.4);
+            --shadow-glow-danger: 0 0 20px rgba(239, 68, 68, 0.4);
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+            background: var(--bg-primary);
+            background-attachment: fixed;
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Top Navigation Bar */
+        .top-nav {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(241, 245, 249, 0.95));
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-bottom: 2px solid rgba(14, 165, 233, 0.2);
+            padding: 20px 35px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .nav-brand h1 {
+            font-size: 1.7em;
+            font-weight: 800;
+            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 50%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+            text-shadow: 0 0 30px rgba(14, 165, 233, 0.3);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(241, 245, 249, 0.95));
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(14, 165, 233, 0.3);
+            border-radius: 16px;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .status-badge:hover {
+            box-shadow: var(--shadow-lg), var(--shadow-glow);
+            transform: translateY(-2px);
+            border-color: var(--primary-color);
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: var(--success-color);
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+        }
+
+        .status-dot.disconnected {
+            background: var(--danger-color);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        /* Main Container */
+        .container {
+            display: flex;
+            gap: 0;
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Sidebar Navigation (Left Side) */
+        .sidebar {
+            width: 280px;
+            flex-shrink: 0;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98));
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-right: 2px solid rgba(14, 165, 233, 0.2);
+            padding: 30px 0;
+            height: calc(100vh - 90px);
+            position: sticky;
+            top: 90px;
+            overflow-y: auto;
+            border-radius: 0;
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Sidebar Sections */
+        .sidebar-section {
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-section:last-child {
+            border-bottom: none;
+        }
+
+        .sidebar-section-title {
+            font-size: 0.75em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            padding: 0 20px 12px 20px;
+            margin-bottom: 8px;
+        }
+
+        /* Tab Navigation */
+        .tabs {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding: 0;
+        }
+
+        .tab-button {
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            border-radius: 0;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-align: left;
+            width: 100%;
+            justify-content: flex-start;
+            position: relative;
+            margin: 0;
+        }
+
+        .tab-button:hover {
+            background: var(--hover-bg);
+            color: var(--text-primary);
+        }
+
+        .tab-button.active {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary-color);
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .tab-button i {
+            font-size: 1.1em;
+            width: 20px;
+            text-align: center;
+        }
+
+        .tab-button .alert-count {
+            margin-left: auto;
+            background: var(--danger-color);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            min-width: 0;
+            padding: 35px;
+            background: rgba(248, 250, 252, 0.6);
+            backdrop-filter: blur(10px);
+        }
+
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 35px;
+        }
+
+        .content-header h2 {
+            font-size: 2.2em;
+            font-weight: 800;
+            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 50%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+
+        .content-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-icon {
+            padding: 10px 16px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+
+        .btn-icon:hover {
+            background: var(--hover-bg);
+            border-color: var(--primary-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Dashboard Overview Tab */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        /* KPI Cards Style */
+        .kpi-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 28px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .kpi-card:hover {
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
+            transform: translateY(-4px);
+            border-color: var(--primary-color);
+        }
+
+        .kpi-card:hover::before {
+            opacity: 1;
+        }
+
+        .kpi-label {
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .kpi-value {
+            font-size: 2.8em;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1.1;
+            letter-spacing: -1px;
+        }
+
+        .kpi-value.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .kpi-value.info {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .kpi-value.danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 28px 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--info-color));
+            transform: scaleX(0);
+            transition: transform 0.4s ease;
+        }
+
+        .metric-card.updated::before {
+            animation: slideUpdate 0.6s ease;
+        }
+
+        @keyframes slideUpdate {
+            0% { transform: scaleX(0); }
+            50% { transform: scaleX(1); }
+            100% { transform: scaleX(0); }
+        }
+
+        .metric-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 32px rgba(59, 130, 246, 0.18);
+            border-color: var(--primary-color);
+        }
+
+        .metric-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .metric-card.alert {
+            border-left: 5px solid var(--danger-color);
+            background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%);
+            animation: alertPulse 2.5s infinite;
+        }
+
+        .metric-card.warning {
+            border-left: 5px solid var(--warning-color);
+            background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
+        }
+
+        @keyframes alertPulse {
+            0%, 100% { 
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+                border-left-color: var(--danger-color);
+            }
+            50% { 
+                box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+                border-left-color: #dc2626;
+            }
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .metric-label {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            font-weight: 700;
+        }
+
+        .metric-icon {
+            font-size: 1.8em;
+            opacity: 0.8;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+
+        .metric-value {
+            font-size: 3em;
+            font-weight: 800;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            position: relative;
+            letter-spacing: -1px;
+            line-height: 1;
+        }
+
+        .metric-value.updating {
+            animation: valueUpdate 0.5s ease;
+        }
+
+        @keyframes valueUpdate {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); color: var(--primary-color); }
+            100% { transform: scale(1); }
+        }
+
+        .metric-unit {
+            font-size: 1.1em;
+            color: var(--text-secondary);
+            margin-left: 5px;
+        }
+
+        .metric-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 18px;
+            border-top: 2px solid var(--border-color);
+        }
+
+        .metric-trend {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .metric-status {
+            padding: 6px 14px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .status-normal {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.1));
+            color: #059669;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .status-alert {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.1));
+            color: #dc2626;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            animation: statusPulse 2s infinite;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 28px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .chart-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+            border-color: var(--primary-light);
+        }
+        
+        .chart-card canvas {
+            cursor: grab;
+        }
+        
+        .chart-card canvas:active {
+            cursor: grabbing;
+        }
+        
+        .chart-help-text {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 0.75em;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 5px 10px;
+            border-radius: 4px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .chart-card h3 {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Alerts Section */
+        .alerts-container {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .alerts-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .alerts-header h2 {
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-count {
+            padding: 4px 12px;
+            background: var(--danger-color);
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .alerts-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        /* Alert Sub-Tabs */
+        .alert-sub-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0;
+        }
+        
+        .alert-sub-tab {
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            position: relative;
+            margin-bottom: -2px;
+        }
+        
+        .alert-sub-tab:hover {
+            color: var(--text-primary);
+            background: var(--hover-bg);
+        }
+        
+        .alert-sub-tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        .alert-sub-tab i {
+            font-size: 1.1em;
+        }
+        
+        .alert-count-badge {
+            background: var(--primary-color);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            min-width: 20px;
+            text-align: center;
+        }
+        
+        .alert-count-badge-danger {
+            background: var(--danger-color);
+        }
+        
+        .alert-tab-content {
+            display: none;
+        }
+        
+        .alert-tab-content.active {
+            display: block;
+        }
+
+        .alert-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid var(--danger-color);
+            background: rgba(239, 68, 68, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .alert-item.warning {
+            border-left-color: var(--warning-color);
+            background: rgba(245, 158, 11, 0.08);
+        }
+
+        .alert-time {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+        }
+
+        /* Data Tables */
+        .table-container {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            overflow-x: auto;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .table-header h2 {
+            font-size: 1.3em;
+        }
+
+        .table-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+            color: white;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-xl), var(--shadow-glow);
+            background: linear-gradient(135deg, #38bdf8, #22d3ee);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            box-shadow: none;
+        }
+
+        .btn-outline:hover {
+            background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+            color: white;
+            border-color: transparent;
+            box-shadow: var(--shadow-md), var(--shadow-glow);
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.85em;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.15), rgba(6, 182, 212, 0.15));
+            font-weight: 700;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 0.8px;
+            border-bottom: 3px solid var(--primary-color);
+        }
+
+        tr:hover {
+            background: var(--hover-bg);
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .badge-normal {
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+        }
+
+        .badge-alert {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+        }
+
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: #d97706;
+        }
+
+        /* Cyber Attack Row Styling */
+        .cyber-attack-row {
+            background: rgba(239, 68, 68, 0.08) !important;
+            border-left: 4px solid #dc2626;
+            animation: cyberAttackPulse 2s ease-in-out infinite;
+        }
+
+        .cyber-attack-row:hover {
+            background: rgba(239, 68, 68, 0.15) !important;
+        }
+
+        .cyber-attack-row td {
+            font-weight: 600;
+        }
+
+        @keyframes cyberAttackPulse {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 0 4px rgba(239, 68, 68, 0);
+            }
+        }
+
+        .badge-open {
+            background: rgba(59, 130, 246, 0.1);
+            color: #2563eb;
+        }
+
+        .badge-closed {
+            background: rgba(107, 114, 128, 0.1);
+            color: #475569;
+        }
+
+        /* Statistics Tab */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+        }
+
+        .stat-card h3 {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        /* Rooms Tab */
+        .rooms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .room-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+        }
+
+        .room-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .room-header h3 {
+            font-size: 1.2em;
+        }
+
+        .room-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .room-metric {
+            text-align: center;
+        }
+
+        .room-metric-label {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        .room-metric-value {
+            font-size: 1.8em;
+            font-weight: 600;
+        }
+
+        /* Settings Tab */
+        .settings-section {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .settings-section h3 {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-size: 0.9em;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 1em;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .tabs {
+                overflow-x: auto;
+            }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+
+        /* Attack Details Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .modal-header h2 {
+            font-size: 1.5em;
+            color: var(--danger-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            font-size: 1.5em;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: var(--hover-bg);
+            color: var(--text-primary);
+        }
+
+        .attack-details-section {
+            margin-bottom: 25px;
+        }
+
+        .attack-details-section h3 {
+            font-size: 1.1em;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .attack-info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .attack-info-item {
+            padding: 15px;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .attack-info-item.alert {
+            border-left-color: var(--danger-color);
+            background: rgba(239, 68, 68, 0.05);
+        }
+
+        .attack-info-label {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .attack-info-value {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .attack-indicators {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .attack-indicator {
+            padding: 12px 15px;
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 4px solid var(--danger-color);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .attack-indicator i {
+            color: var(--danger-color);
+            font-size: 1.2em;
+        }
+
+        /* Blocked Attacks Tab Styles - Swipe Cards */
+        .blocked-users-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 25px;
+            padding: 20px 0;
+        }
+
+        .swipe-card-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            perspective: 1000px;
+        }
+
+        .blocked-user-card {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .blocked-user-card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: var(--shadow-lg);
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+
+        .card-front {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(241, 245, 249, 0.98));
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .card-back {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.05), rgba(6, 182, 212, 0.05));
+            transform: rotateY(180deg);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            justify-content: center;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .blocked-user-card:hover .card-face {
+            box-shadow: var(--shadow-xl), var(--shadow-glow);
+        }
+
+        .swipe-hint {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+            font-size: 0.75em;
+            color: var(--text-secondary);
+            opacity: 0.6;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .blocked-user-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .blocked-user-header h3 {
+            margin: 0;
+            font-size: 1.2em;
+            color: var(--text-primary);
+        }
+
+        .blocked-user-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .blocked-detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .blocked-detail-label {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .blocked-detail-value {
+            font-size: 1em;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .attack-incidents-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .attack-incident-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--danger-color);
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .incident-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .incident-header h4 {
+            margin: 0;
+            font-size: 1em;
+        }
+
+        .incident-indicators {
+            margin: 10px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .incident-sensor-data,
+        .incident-action {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(239, 68, 68, 0.05);
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85em;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--hover-bg);
+            border-color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+        <div class="nav-brand">
+            <i class="fas fa-industry" style="font-size: 1.8em; color: var(--primary-color);"></i>
+            <div>
+                <h1>NanoGuard EMS</h1>
+                <div style="font-size: 0.85em; color: var(--text-secondary);">Enterprise Monitoring System</div>
+            </div>
+        </div>
+        <div class="nav-actions">
+            <div class="status-badge">
+                <span class="status-dot disconnected" id="status-dot"></span>
+                <span id="status-text">Connecting...</span>
+            </div>
+            <div style="color: var(--text-secondary); font-size: 0.9em;">
+                <i class="far fa-clock"></i> <span id="current-time"></span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Sidebar Navigation (Left) -->
+        <div class="sidebar">
+            <div class="tabs">
+                <button class="tab-button active" onclick="switchTab('overview')">
+                    <i class="fas fa-tachometer-alt"></i> Overview
+                </button>
+                <button class="tab-button" onclick="switchTab('monitoring')">
+                    <i class="fas fa-chart-line"></i> Real-time Monitoring
+                </button>
+                <button class="tab-button" onclick="switchTab('alerts')">
+                    <i class="fas fa-exclamation-triangle"></i> Alerts
+                    <span class="alert-count" id="alert-count-badge" style="display: none;">0</span>
+                </button>
+                <button class="tab-button" onclick="switchTab('rooms')">
+                    <i class="fas fa-door-open"></i> Rooms
+                </button>
+                <button class="tab-button" onclick="switchTab('data')">
+                    <i class="fas fa-database"></i> Data Logs
+                </button>
+                <button class="tab-button" onclick="switchTab('statistics')">
+                    <i class="fas fa-chart-bar"></i> Statistics
+                </button>
+                <button class="tab-button" onclick="switchTab('blocked-attacks')">
+                    <i class="fas fa-ban"></i> Blocked Attacks
+                    <span class="alert-count" id="blocked-count-badge" style="display: none;">0</span>
+                </button>
+                <button class="tab-button" onclick="switchTab('settings')">
+                    <i class="fas fa-cog"></i> Settings
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <div class="content-header">
+                <h2>Dashboard</h2>
+                <div class="content-actions">
+                    <button class="btn-icon" onclick="exportData()">
+                        <i class="fas fa-share"></i> Share
+                    </button>
+                    <button class="btn-icon" onclick="location.reload()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="metrics-grid" style="margin-bottom: 40px;">
+                <div class="kpi-card">
+                    <div class="kpi-label">Uptime</div>
+                    <div class="kpi-value success" id="kpi-uptime">99.9%</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Devices</div>
+                    <div class="kpi-value info" id="kpi-devices">1</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Users</div>
+                    <div class="kpi-value" id="kpi-users">1</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Alerts</div>
+                    <div class="kpi-value danger" id="kpi-alerts">0</div>
+                </div>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card" id="temp-card">
+                    <div class="metric-header">
+                        <div class="metric-label">Temperature</div>
+                        <i class="fas fa-thermometer-half metric-icon" style="color: var(--danger-color);"></i>
+                    </div>
+                    <div class="metric-value">
+                        <span id="temp-value">--</span>
+                        <span class="metric-unit">°C</span>
+                    </div>
+                    <div class="metric-footer">
+                        <div class="metric-trend">Range: 18-25°C</div>
+                        <span class="metric-status status-normal" id="temp-status">Normal</span>
+                    </div>
+                </div>
+
+                <div class="metric-card" id="humidity-card">
+                    <div class="metric-header">
+                        <div class="metric-label">Humidity</div>
+                        <i class="fas fa-tint metric-icon" style="color: var(--primary-color);"></i>
+                    </div>
+                    <div class="metric-value">
+                        <span id="humidity-value">--</span>
+                        <span class="metric-unit">%</span>
+                    </div>
+                    <div class="metric-footer">
+                        <div class="metric-trend">Range: 40-60%</div>
+                        <span class="metric-status status-normal" id="humidity-status">Normal</span>
+                    </div>
+                </div>
+
+                <div class="metric-card" id="pressure-card">
+                    <div class="metric-header">
+                        <div class="metric-label">Differential Pressure</div>
+                        <i class="fas fa-wind metric-icon" style="color: var(--warning-color);"></i>
+                    </div>
+                    <div class="metric-value">
+                        <span id="pressure-value">--</span>
+                        <span class="metric-unit">Pa</span>
+                    </div>
+                    <div class="metric-footer">
+                        <div class="metric-trend">Range: 8-20 Pa</div>
+                        <span class="metric-status status-normal" id="pressure-status">Normal</span>
+                    </div>
+                </div>
+
+                <div class="metric-card" id="particles-card">
+                    <div class="metric-header">
+                        <div class="metric-label">Particle Count</div>
+                        <i class="fas fa-microscope metric-icon" style="color: var(--success-color);"></i>
+                    </div>
+                    <div class="metric-value">
+                        <span id="particles-value">--</span>
+                        <span class="metric-unit">/m³</span>
+                    </div>
+                    <div class="metric-footer">
+                        <div class="metric-trend">Limit: 300 /m³</div>
+                        <span class="metric-status status-normal" id="particles-status">Normal</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-label">Door Status</div>
+                        <i class="fas fa-door-open metric-icon"></i>
+                    </div>
+                    <div class="metric-value">
+                        <span class="badge" id="door-status">--</span>
+                    </div>
+                    <div class="metric-footer">
+                        <div class="metric-trend">Current Status</div>
+                        <span class="metric-status status-normal">Active</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-label">Security Status</div>
+                        <i class="fas fa-shield-alt metric-icon"></i>
+                    </div>
+                    <div class="metric-value">
+                        <span class="badge" id="security-status">--</span>
+                    </div>
+                    <div class="metric-footer">
+                        <div class="metric-trend">System Security</div>
+                        <span class="metric-status status-normal" id="security-status-badge">Secure</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Real-time Monitoring Tab -->
+        <div id="monitoring" class="tab-content">
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3><i class="fas fa-thermometer-half"></i> Temperature Monitoring</h3>
+                    <div class="chart-help-text">💡 Drag to pan | Ctrl+Scroll to zoom</div>
+                    <canvas id="monitor-temp-chart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3><i class="fas fa-tint"></i> Humidity Monitoring</h3>
+                    <div class="chart-help-text">💡 Drag to pan | Ctrl+Scroll to zoom</div>
+                    <canvas id="monitor-humidity-chart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3><i class="fas fa-wind"></i> Pressure Monitoring</h3>
+                    <div class="chart-help-text">💡 Drag to pan | Ctrl+Scroll to zoom</div>
+                    <canvas id="monitor-pressure-chart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3><i class="fas fa-microscope"></i> Particle Count Monitoring</h3>
+                    <div class="chart-help-text">💡 Drag to pan | Ctrl+Scroll to zoom</div>
+                    <canvas id="monitor-particles-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts Tab -->
+        <div id="alerts" class="tab-content">
+            <div class="alerts-container">
+                <div class="alerts-header">
+                    <h2><i class="fas fa-exclamation-triangle"></i> Active Alerts</h2>
+                    <div class="alert-count" id="total-alerts">0</div>
+                </div>
+                
+                <!-- Alert Sub-Tabs -->
+                <div class="alert-sub-tabs">
+                    <button class="alert-sub-tab active" onclick="switchAlertTab('general')" id="alert-tab-general">
+                        <i class="fas fa-exclamation-circle"></i> General Alerts
+                        <span class="alert-count-badge" id="general-alert-count">0</span>
+                    </button>
+                    <button class="alert-sub-tab" onclick="switchAlertTab('cyberattack')" id="alert-tab-cyberattack">
+                        <i class="fas fa-shield-alt"></i> Cyber Attack
+                        <span class="alert-count-badge alert-count-badge-danger" id="cyberattack-alert-count">0</span>
+                    </button>
+                </div>
+                
+                <!-- General Alerts List -->
+                <div class="alert-tab-content active" id="general-alerts-content">
+                    <div class="alerts-list" id="general-alerts-list">
+                        <p style="text-align: center; padding: 40px; color: var(--text-secondary);">No general alerts</p>
+                    </div>
+                </div>
+                
+                <!-- Cyber Attack Alerts List -->
+                <div class="alert-tab-content" id="cyberattack-alerts-content">
+                    <div class="alerts-list" id="cyberattack-alerts-list">
+                        <p style="text-align: center; padding: 40px; color: var(--text-secondary);">No cyber attack alerts</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rooms Tab -->
+        <div id="rooms" class="tab-content">
+            <div id="rooms-admin-section" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2><i class="fas fa-door-open"></i> Room Management</h2>
+                    <button class="btn btn-primary" onclick="showCreateRoomModal()">
+                        <i class="fas fa-plus"></i> Create Room
+                    </button>
+                </div>
+                <div class="rooms-grid" id="rooms-grid-admin"></div>
+            </div>
+            <div id="rooms-user-section">
+                <h2><i class="fas fa-door-open"></i> My Room</h2>
+                <div class="rooms-grid" id="rooms-grid-user"></div>
+            </div>
+        </div>
+        
+        <!-- Create Room Modal -->
+        <div id="create-room-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Create New Room</h3>
+                    <button class="modal-close" onclick="closeCreateRoomModal()">&times;</button>
+                </div>
+                <form id="create-room-form" onsubmit="createRoom(event)">
+                    <div class="form-group">
+                        <label>Room Name *</label>
+                        <input type="text" id="room-name-input" required placeholder="e.g., Room 1, Lab A">
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="room-description-input" rows="3" placeholder="Optional description"></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeCreateRoomModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Room</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Block User Modal -->
+        <div id="block-user-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-ban"></i> Block User</h3>
+                    <button class="modal-close" onclick="closeBlockUserModal()">&times;</button>
+                </div>
+                <form id="block-user-form" onsubmit="blockUserManually(event)">
+                    <div class="form-group">
+                        <label>User ID</label>
+                        <input type="text" id="block-user-id-input" readonly style="background: var(--bg-primary);">
+                    </div>
+                    <div class="form-group">
+                        <label>Block Type *</label>
+                        <select id="block-type-input" required onchange="toggleBlockDuration()">
+                            <option value="temporary">Temporary Block</option>
+                            <option value="permanent">Permanent Block</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="block-duration-group">
+                        <label>Duration (minutes)</label>
+                        <input type="number" id="block-duration-input" min="1" value="60" placeholder="60">
+                        <small style="color: var(--text-secondary);">User will be automatically unblocked after this duration</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Reason *</label>
+                        <textarea id="block-reason-input" rows="3" required placeholder="Enter reason for blocking this user..."></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeBlockUserModal()">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Block User</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Data Logs Tab -->
+        <div id="data" class="tab-content">
+            <div class="table-container">
+                <div class="table-header">
+                    <h2><i class="fas fa-table"></i> Sensor Data Logs</h2>
+                    <div class="table-controls">
+                        <button class="btn" onclick="loadLogs()"><i class="fas fa-sync-alt"></i> Refresh</button>
+                        <button class="btn" onclick="exportData()"><i class="fas fa-download"></i> Export</button>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Temperature</th>
+                            <th>Humidity</th>
+                            <th>Pressure</th>
+                            <th>Particles</th>
+                            <th>Door</th>
+                            <th>User</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-body">
+                        <tr><td colspan="8" style="text-align: center; padding: 40px; color: var(--text-secondary);">Loading data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Statistics Tab -->
+        <div id="statistics" class="tab-content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Records</h3>
+                    <div class="stat-value" id="stat-total">--</div>
+                    <div style="color: var(--text-secondary); font-size: 0.75em;">All time data points</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Average Temperature</h3>
+                    <div class="stat-value" id="stat-avg-temp">--°C</div>
+                    <div style="color: var(--text-secondary); font-size: 0.75em;">Current average</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Average Humidity</h3>
+                    <div class="stat-value" id="stat-avg-hum">--%</div>
+                    <div style="color: var(--text-secondary); font-size: 0.75em;">Current average</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Average Pressure</h3>
+                    <div class="stat-value" id="stat-avg-press">--Pa</div>
+                    <div style="color: var(--text-secondary); font-size: 0.75em;">Current average</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Alerts</h3>
+                    <div class="stat-value" id="stat-total-alerts">--</div>
+                    <div style="color: var(--text-secondary); font-size: 0.75em;">All time alerts</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Latest Update</h3>
+                    <div class="stat-value" style="font-size: 1.2em;" id="stat-latest">--</div>
+                    <div style="color: var(--text-secondary); font-size: 0.75em;">Last data point</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Blocked Attacks Tab -->
+        <div id="blocked-attacks" class="tab-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <h2><i class="fas fa-ban"></i> Blocked Attacks & Users</h2>
+                <button class="btn" onclick="refreshBlockedUsers()" style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+            
+            <div id="blocked-users-container">
+                <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 2em; margin-bottom: 15px;"></i>
+                    <p>Loading blocked users...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings" class="tab-content">
+            <div class="settings-section">
+                <h3><i class="fas fa-sliders-h"></i> Alert Thresholds</h3>
+                <div class="form-group">
+                    <label>Temperature Minimum (°C)</label>
+                    <input type="number" id="setting-temp-min" value="18" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>Temperature Maximum (°C)</label>
+                    <input type="number" id="setting-temp-max" value="25" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>Humidity Minimum (%)</label>
+                    <input type="number" id="setting-hum-min" value="40" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>Humidity Maximum (%)</label>
+                    <input type="number" id="setting-hum-max" value="60" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>Pressure Minimum (Pa)</label>
+                    <input type="number" id="setting-press-min" value="8" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>Pressure Maximum (Pa)</label>
+                    <input type="number" id="setting-press-max" value="20" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>Particle Limit (/m³)</label>
+                    <input type="number" id="setting-particle-limit" value="300" step="1">
+                </div>
+                <button class="btn" onclick="saveSettings()" style="width: 100%; margin-top: 10px;">
+                    <i class="fas fa-save"></i> Save Settings
+                </button>
+            </div>
+
+            <div class="settings-section">
+                <h3><i class="fas fa-info-circle"></i> System Information</h3>
+                <div style="color: var(--text-secondary); line-height: 2;">
+                    <div><strong>System Status:</strong> <span id="sys-status">Running</span></div>
+                    <div><strong>Database:</strong> <span id="sys-db">Connected</span></div>
+                    <div><strong>WebSocket:</strong> <span id="sys-ws">Connected</span></div>
+                    <div><strong>Uptime:</strong> <span id="sys-uptime">--</span></div>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <!-- Attack Details Modal -->
+    <div class="modal-overlay" id="attack-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-shield-alt"></i> Cyber Attack Details</h2>
+                <button class="modal-close" onclick="closeAttackModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="attack-details-content">
+                <!-- Content will be populated dynamically -->
+        </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+        const WS_URL = (window.location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + window.location.host + '/ws/cleanroom';
+        
+        // Authentication check - redirect to login if not authenticated
+        (function() {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+            
+            // Verify token is still valid by checking user info
+            const user = localStorage.getItem('user');
+            if (!user) {
+                localStorage.removeItem('access_token');
+                window.location.href = '/login';
+                return;
+            }
+            
+            // Add logout functionality to nav
+            setTimeout(() => {
+                const navActions = document.querySelector('.nav-actions');
+                if (navActions) {
+                    const userData = JSON.parse(user);
+                    const logoutBtn = document.createElement('div');
+                    logoutBtn.style.cssText = 'display: flex; align-items: center; gap: 12px; margin-left: 20px; padding: 8px 16px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; transition: all 0.2s;';
+                    logoutBtn.innerHTML = `
+                        <i class="fas fa-user-circle" style="color: var(--primary-color);"></i>
+                        <span style="font-size: 0.9em; color: var(--text-primary);">${userData.username}</span>
+                        <i class="fas fa-sign-out-alt" style="color: var(--text-secondary);"></i>
+                    `;
+                    logoutBtn.onclick = () => {
+                        localStorage.removeItem('access_token');
+                        localStorage.removeItem('user');
+                        window.location.href = '/login';
+                    };
+                    logoutBtn.onmouseenter = () => {
+                        logoutBtn.style.background = 'var(--hover-bg)';
+                    };
+                    logoutBtn.onmouseleave = () => {
+                        logoutBtn.style.background = 'var(--card-bg)';
+                    };
+                    navActions.appendChild(logoutBtn);
+                }
+            }, 100);
+        })();
+
+        let ws = null;
+        let charts = {};
+        let monitorCharts = {};
+        let allAlerts = [];
+        let chartDataPoints = {}; // Store full data for each chart point
+        const MAX_CHART_POINTS = 30; // Display window size
+        const MAX_STORED_POINTS = 200; // Maximum data points to store for scrolling
+        
+        // Audio context for sound alerts
+        let audioContext = null;
+        let soundEnabled = true; // Can be toggled by user
+        
+        // Initialize audio context (required for user interaction)
+        function initAudioContext() {
+            try {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            } catch (e) {
+                console.warn('Audio context not supported:', e);
+                soundEnabled = false;
+            }
+        }
+        
+        // Play sound for cyber attack alert (urgent, high-pitched, 3 seconds)
+        function playCyberAttackSound() {
+            if (!soundEnabled || !audioContext) return;
+            
+            try {
+                // Resume audio context if suspended (browser autoplay policy)
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                
+                const duration = 3.0; // 3 seconds
+                const beepDuration = 0.3; // Each beep lasts 0.3 seconds
+                const pauseDuration = 0.2; // Pause between beeps
+                const beepCount = Math.floor(duration / (beepDuration + pauseDuration));
+                
+                // Create multiple beeps for 3 seconds
+                for (let i = 0; i < beepCount; i++) {
+                    const startTime = audioContext.currentTime + i * (beepDuration + pauseDuration);
+                    
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    // Urgent, high-pitched alternating alarm sound
+                    oscillator.frequency.setValueAtTime(800, startTime);
+                    oscillator.frequency.setValueAtTime(1000, startTime + 0.1);
+                    oscillator.frequency.setValueAtTime(800, startTime + 0.2);
+                    
+                    // Volume envelope for each beep
+                    gainNode.gain.setValueAtTime(0, startTime);
+                    gainNode.gain.linearRampToValueAtTime(0.4, startTime + 0.05);
+                    gainNode.gain.setValueAtTime(0.4, startTime + 0.25);
+                    gainNode.gain.linearRampToValueAtTime(0, startTime + beepDuration);
+                    
+                    oscillator.start(startTime);
+                    oscillator.stop(startTime + beepDuration);
+                }
+            } catch (e) {
+                console.warn('Error playing cyber attack sound:', e);
+            }
+        }
+        
+        // Play sound for normal alert (gentle beep)
+        function playNormalAlertSound() {
+            if (!soundEnabled || !audioContext) return;
+            
+            try {
+                // Resume audio context if suspended (browser autoplay policy)
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                // Gentle beep sound
+                oscillator.frequency.value = 600;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } catch (e) {
+                console.warn('Error playing normal alert sound:', e);
+            }
+        }
+        
+        // Track alert states to prevent duplicate alerts
+        let alertStates = {
+            temperature: false,
+            humidity: false,
+            pressure: false,
+            particles: false,
+            security: false
+        };
+        
+        // Track last alert time for each metric (cooldown to prevent frequent alerts)
+        let lastAlertTime = {
+            temperature: 0,
+            humidity: 0,
+            pressure: 0,
+            particles: 0,
+            security: 0
+        };
+        const ALERT_COOLDOWN_MS = 300000; // 5 minutes cooldown between alerts for same metric
+
+        // Alert thresholds (can be updated from settings)
+        let TEMP_MIN = 18, TEMP_MAX = 25;
+        let HUM_MIN = 40, HUM_MAX = 60;
+        let PRESS_MIN = 8, PRESS_MAX = 20;
+        let PARTICLE_LIMIT = 300;
+
+        // Helper function for authenticated fetch
+        async function authenticatedFetch(url, options = {}) {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+            
+            const defaultOptions = {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                },
+                ...options
+            };
+            
+            return fetch(url, defaultOptions);
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Load rooms when tab is opened
+            if (tabName === 'rooms') {
+                loadRooms();
+            }
+            
+            // Load blocked users when tab is opened
+            if (tabName === 'blocked-attacks') {
+                loadBlockedUsers();
+            }
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            const clickedButton = event ? event.target.closest('.tab-button') : document.querySelector(`[onclick="switchTab('${tabName}')"]`);
+            if (clickedButton) {
+                clickedButton.classList.add('active');
+            }
+
+            // Initialize charts if needed
+            if (tabName === 'monitoring' && Object.keys(monitorCharts).length === 0) {
+                initMonitorCharts();
+            }
+            
+            // Load blocked users when tab is opened
+            if (tabName === 'blocked-attacks') {
+                loadBlockedUsers();
+            }
+        }
+
+        // Load blocked users
+        async function loadBlockedUsers() {
+            const container = document.getElementById('blocked-users-container');
+            if (!container) return;
+            
+            try {
+                container.innerHTML = '<div style="text-align: center; padding: 40px;"><i class="fas fa-spinner fa-spin" style="font-size: 2em;"></i><p>Loading blocked users...</p></div>';
+                
+                const response = await authenticatedFetch(`${API_URL}/api/security/blocked-users`);
+                if (!response.ok) {
+                    if (response.status === 403) {
+                        container.innerHTML = `
+                            <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                <i class="fas fa-lock" style="font-size: 2em; margin-bottom: 15px;"></i>
+                                <p>You don't have permission to view blocked users.</p>
+                                <p style="font-size: 0.9em;">Admin or Operator role required.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const blockedUsers = await response.json();
+                
+                // Update badge count
+                const badge = document.getElementById('blocked-count-badge');
+                if (badge) {
+                    if (blockedUsers.length > 0) {
+                        badge.textContent = blockedUsers.length;
+                        badge.style.display = 'inline-block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+                
+                if (blockedUsers.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 60px; color: var(--text-secondary);">
+                            <i class="fas fa-check-circle" style="font-size: 3em; color: var(--success-color); margin-bottom: 20px;"></i>
+                            <h3 style="color: var(--text-primary); margin-bottom: 10px;">No Blocked Users</h3>
+                            <p>All users are currently active. No cyber attacks have been detected recently.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Get user role to check if unblock is allowed
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                const isAdmin = user.role === 'admin';
+                
+                // Show block button for admins
+                const blockBtn = document.getElementById('block-user-btn-header');
+                if (blockBtn) {
+                    blockBtn.style.display = isAdmin ? 'block' : 'none';
+                }
+                
+                container.innerHTML = `
+                    <div class="blocked-users-grid">
+                        ${blockedUsers.map((user, index) => {
+                            const blockedAt = new Date(user.blocked_at).toLocaleString();
+                            const blockedUntil = user.blocked_until ? new Date(user.blocked_until).toLocaleString() : 'Permanent';
+                            const isPermanent = user.is_permanent;
+                            const cardId = `swipe-card-${index}`;
+                            
+                            return `
+                                <div class="swipe-card-container">
+                                    <div class="blocked-user-card" id="${cardId}" onclick="flipCard('${cardId}')">
+                                        <div class="card-face card-front">
+                                            <div>
+                                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                                                    <div>
+                                                        <h3 style="margin: 0; font-size: 1.3em; color: var(--text-primary);">
+                                                            <i class="fas fa-user-slash" style="color: var(--danger-color);"></i> ${escapeHtml(user.user_id)}
+                                                        </h3>
+                                                        <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                                                            <span class="badge ${isPermanent ? 'badge-alert' : 'badge-warning'}">
+                                                                ${isPermanent ? '🔒 Permanent' : '⏰ Temporary'}
+                                                            </span>
+                                                            <span class="badge badge-alert">${user.attack_count} Attack${user.attack_count !== 1 ? 's' : ''}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div style="margin-top: 20px;">
+                                                    <div style="margin-bottom: 12px;">
+                                                        <div style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 4px;">
+                                                            <i class="fas fa-clock"></i> Blocked At
+                                                        </div>
+                                                        <div style="font-weight: 600; color: var(--text-primary);">${blockedAt}</div>
+                                                    </div>
+                                                    ${!isPermanent ? `
+                                                        <div style="margin-bottom: 12px;">
+                                                            <div style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 4px;">
+                                                                <i class="fas fa-hourglass-half"></i> Unblocks At
+                                                            </div>
+                                                            <div style="font-weight: 600; color: var(--text-primary);">${blockedUntil}</div>
+                                                        </div>
+                                                    ` : ''}
+                                                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+                                                        <div style="font-size: 0.85em; color: var(--text-secondary); margin-bottom: 6px;">
+                                                            <i class="fas fa-exclamation-triangle"></i> Reason
+                                                        </div>
+                                                        <div style="font-size: 0.9em; color: var(--text-primary); line-height: 1.4;">${escapeHtml(user.reason || 'N/A')}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="swipe-hint">
+                                                <i class="fas fa-hand-pointer"></i> Click to view actions
+                                            </div>
+                                        </div>
+                                        <div class="card-face card-back">
+                                            ${isAdmin ? `
+                                                <button class="btn btn-success" onclick="event.stopPropagation(); unblockUser('${escapeHtml(user.user_id)}')" style="width: 100%;">
+                                                    <i class="fas fa-unlock"></i> Unblock User
+                                                </button>
+                                                ${!isPermanent ? `
+                                                    <button class="btn btn-warning" onclick="event.stopPropagation(); makePermanentBlock('${escapeHtml(user.user_id)}')" style="width: 100%;">
+                                                        <i class="fas fa-lock"></i> Make Permanent
+                                                    </button>
+                                                ` : ''}
+                                                <button class="btn btn-outline" onclick="event.stopPropagation(); viewUserAttacks('${escapeHtml(user.user_id)}')" style="width: 100%;">
+                                                    <i class="fas fa-eye"></i> View Attacks
+                                                </button>
+                                                <button class="btn btn-outline" onclick="event.stopPropagation(); viewUserData('${escapeHtml(user.user_id)}')" style="width: 100%;">
+                                                    <i class="fas fa-database"></i> View Data
+                                                </button>
+                                            ` : `
+                                                <button class="btn btn-outline" onclick="event.stopPropagation(); viewUserAttacks('${escapeHtml(user.user_id)}')" style="width: 100%;">
+                                                    <i class="fas fa-eye"></i> View Attack Details
+                                                </button>
+                                            `}
+                                            <div class="swipe-hint" style="position: relative; bottom: auto; right: auto; margin-top: 10px; text-align: center;">
+                                                <i class="fas fa-hand-pointer"></i> Click to go back
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading blocked users:', error);
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--danger-color);">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2em; margin-bottom: 15px;"></i>
+                        <p>Error loading blocked users. Please try again.</p>
+                        <button class="btn" onclick="loadBlockedUsers()" style="margin-top: 15px;">
+                            <i class="fas fa-redo"></i> Retry
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // Refresh blocked users
+        function refreshBlockedUsers() {
+            loadBlockedUsers();
+        }
+
+        // Unblock user
+        async function unblockUser(userId) {
+            if (!confirm(`Are you sure you want to unblock user "${userId}"?\n\nThis will allow the user to send data again.`)) {
+                return;
+            }
+            
+            try {
+                const response = await authenticatedFetch(`${API_URL}/api/security/unblock/${userId}`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    alert(`Error: ${error.detail || 'Failed to unblock user'}`);
+                    return;
+                }
+                
+                const result = await response.json();
+                alert(`✅ ${result.message}`);
+                loadBlockedUsers(); // Refresh the list
+            } catch (error) {
+                console.error('Error unblocking user:', error);
+                alert('Error unblocking user. Please try again.');
+            }
+        }
+        
+        // Make temporary block permanent
+        async function makePermanentBlock(userId) {
+            if (!confirm(`Are you sure you want to make this block PERMANENT for user "${userId}"?\n\nThis action cannot be automatically reversed. You will need to manually unblock the user later.`)) {
+                return;
+            }
+            
+            try {
+                const response = await authenticatedFetch(`${API_URL}/api/security/blocked-users/${encodeURIComponent(userId)}/make-permanent`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    alert(`Error: ${error.detail || 'Failed to make block permanent'}`);
+                    return;
+                }
+                
+                const result = await response.json();
+                alert(`✅ ${result.message}`);
+                loadBlockedUsers(); // Refresh the list
+            } catch (error) {
+                console.error('Error making block permanent:', error);
+                alert('Error updating block status. Please try again.');
+            }
+        }
+        
+        // View user's recent data
+        async function viewUserData(userId) {
+            try {
+                const response = await authenticatedFetch(`${API_URL}/logs?limit=50`);
+                if (!response.ok) {
+                    alert('Error loading user data.');
+                    return;
+                }
+                
+                const logs = await response.json();
+                const userLogs = logs.filter(log => log.user_id === userId).slice(0, 20);
+                
+                if (userLogs.length === 0) {
+                    alert('No data found for this user.');
+                    return;
+                }
+                
+                // Create modal to show user data
+                const modal = document.createElement('div');
+                modal.className = 'modal-overlay active';
+                modal.style.display = 'flex';
+                modal.innerHTML = `
+                    <div class="modal-content" style="max-width: 900px;">
+                        <div class="modal-header">
+                            <h2><i class="fas fa-database"></i> Recent Data: ${escapeHtml(userId)}</h2>
+                            <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div style="max-height: 70vh; overflow-y: auto;">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="background: var(--bg-primary);">
+                                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid var(--border-color);">Timestamp</th>
+                                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid var(--border-color);">Temp</th>
+                                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid var(--border-color);">Humidity</th>
+                                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid var(--border-color);">Pressure</th>
+                                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid var(--border-color);">Particles</th>
+                                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid var(--border-color);">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${userLogs.map(log => {
+                                        const timestamp = new Date(log.timestamp).toLocaleString();
+                                        const isAttack = log.attack_status === 'CYBER_ATTACK';
+                                        return `
+                                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                                <td style="padding: 10px;">${timestamp}</td>
+                                                <td style="padding: 10px;">${log.temperature}°C</td>
+                                                <td style="padding: 10px;">${log.humidity}%</td>
+                                                <td style="padding: 10px;">${log.pressure}Pa</td>
+                                                <td style="padding: 10px;">${log.particles}</td>
+                                                <td style="padding: 10px;">
+                                                    ${isAttack ? '<span class="badge badge-alert">CYBER ATTACK</span>' : '<span class="badge badge-normal">Normal</span>'}
+                                                </td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                // Close on outside click
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.remove();
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                alert('Error loading user data. Please try again.');
+            }
+        }
+
+        // View user attacks
+        async function viewUserAttacks(userId) {
+            try {
+                const response = await authenticatedFetch(`${API_URL}/api/security/incidents?limit=100`);
+                if (!response.ok) {
+                    alert('Error loading attack details.');
+                    return;
+                }
+                
+                const incidents = await response.json();
+                const userIncidents = incidents.filter(inc => inc.user_id === userId);
+                
+                if (userIncidents.length === 0) {
+                    alert('No attack incidents found for this user.');
+                    return;
+                }
+                
+                // Create modal to show incidents
+                const modal = document.createElement('div');
+                modal.className = 'modal-overlay active';
+                modal.style.display = 'flex';
+                modal.innerHTML = `
+                    <div class="modal-content" style="max-width: 800px;">
+                        <div class="modal-header">
+                            <h2><i class="fas fa-shield-alt"></i> Attack Details: ${userId}</h2>
+                            <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div style="max-height: 70vh; overflow-y: auto;">
+                            <div class="attack-incidents-list">
+                                ${userIncidents.map(incident => {
+                                    const createdAt = new Date(incident.created_at).toLocaleString();
+                                    const indicators = Array.isArray(incident.attack_indicators) ? incident.attack_indicators : [];
+                                    const sensorData = typeof incident.sensor_data === 'string' ? JSON.parse(incident.sensor_data) : incident.sensor_data;
+                                    
+                                    return `
+                                        <div class="attack-incident-card">
+                                            <div class="incident-header">
+                                                <div>
+                                                    <h4><i class="fas fa-calendar-alt"></i> ${createdAt}</h4>
+                                                    <span class="badge badge-alert">${incident.severity || 'HIGH'}</span>
+                                                </div>
+                                                <span class="badge ${incident.status === 'ACTIVE' ? 'badge-warning' : 'badge-normal'}">
+                                                    ${incident.status || 'ACTIVE'}
+                                                </span>
+                                            </div>
+                                            ${indicators.length > 0 ? `
+                                                <div class="incident-indicators">
+                                                    <strong>Attack Indicators:</strong>
+                                                    ${indicators.map(ind => `<span class="badge badge-alert">${ind}</span>`).join('')}
+                                                </div>
+                                            ` : ''}
+                                            ${sensorData ? `
+                                                <div class="incident-sensor-data">
+                                                    <strong>Sensor Data:</strong>
+                                                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px;">
+                                                        ${sensorData.temperature !== undefined ? `<div>Temperature: ${sensorData.temperature}°C</div>` : ''}
+                                                        ${sensorData.humidity !== undefined ? `<div>Humidity: ${sensorData.humidity}%</div>` : ''}
+                                                        ${sensorData.pressure !== undefined ? `<div>Pressure: ${sensorData.pressure}Pa</div>` : ''}
+                                                        ${sensorData.particles !== undefined ? `<div>Particles: ${sensorData.particles}</div>` : ''}
+                                                        ${sensorData.door_status ? `<div>Door: ${sensorData.door_status}</div>` : ''}
+                                                    </div>
+                                                </div>
+                                            ` : ''}
+                                            ${incident.action_taken ? `
+                                                <div class="incident-action">
+                                                    <strong>Action Taken:</strong> ${incident.action_taken}
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                // Close on outside click
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.remove();
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading user attacks:', error);
+                alert('Error loading attack details. Please try again.');
+            }
+        }
+
+        // Initialize charts (removed - charts are only in monitoring tab now)
+        function initCharts() {
+            // Dashboard charts removed - charts are now only in Real-time Monitoring tab
+        }
+
+        function initMonitorCharts() {
+            // Check if canvas elements exist
+            const tempCanvas = document.getElementById('monitor-temp-chart');
+            const humidityCanvas = document.getElementById('monitor-humidity-chart');
+            const pressureCanvas = document.getElementById('monitor-pressure-chart');
+            const particlesCanvas = document.getElementById('monitor-particles-chart');
+            
+            if (!tempCanvas || !humidityCanvas || !pressureCanvas || !particlesCanvas) {
+                console.warn('Chart canvas elements not found, charts will be initialized when tab is opened');
+                return;
+            }
+            
+            // Don't reinitialize if charts already exist
+            if (monitorCharts.temp && monitorCharts.humidity && monitorCharts.pressure && monitorCharts.particles) {
+                return;
+            }
+            
+            // Initialize data storage for each chart
+            if (!chartDataPoints.temp) chartDataPoints.temp = [];
+            if (!chartDataPoints.humidity) chartDataPoints.humidity = [];
+            if (!chartDataPoints.pressure) chartDataPoints.pressure = [];
+            if (!chartDataPoints.particles) chartDataPoints.particles = [];
+
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: { 
+                    legend: { display: false },
+                    zoom: {
+                        pan: {
+                            enabled: true,
+                            mode: 'x',
+                            modifierKey: null, // Allow panning without modifier key
+                        },
+                        zoom: {
+                            wheel: {
+                                enabled: true,
+                                modifierKey: 'ctrl', // Zoom with Ctrl + mouse wheel
+                            },
+                            pinch: {
+                                enabled: true,
+                            },
+                            mode: 'x',
+                        }
+                    }
+                },
+                scales: {
+                    x: { 
+                        grid: { color: '#e2e8f0' }, 
+                        ticks: { color: '#64748b' },
+                        // Allow horizontal scrolling
+                        min: undefined, // Don't set min, let it auto-scale
+                    },
+                    y: { 
+                        beginAtZero: false, 
+                        grid: { color: '#e2e8f0' }, 
+                        ticks: { color: '#64748b' } 
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index',
+                },
+                elements: { 
+                    point: { 
+                        radius: function(context) {
+                            // Make attack nodes larger and more visible
+                            const index = context.dataIndex;
+                            const chartName = context.dataset.label || '';
+                            const dataPoints = chartDataPoints[chartName] || [];
+                            if (dataPoints[index] && dataPoints[index].attack_status === 'CYBER_ATTACK') {
+                                return 6;
+                            }
+                            return 2;
+                        },
+                        backgroundColor: function(context) {
+                            // Color attack nodes red
+                            const index = context.dataIndex;
+                            const chartName = context.dataset.label || '';
+                            const dataPoints = chartDataPoints[chartName] || [];
+                            if (dataPoints[index] && dataPoints[index].attack_status === 'CYBER_ATTACK') {
+                                return '#ef4444';
+                            }
+                            return null; // Use default color
+                        },
+                        borderColor: function(context) {
+                            const index = context.dataIndex;
+                            const chartName = context.dataset.label || '';
+                            const dataPoints = chartDataPoints[chartName] || [];
+                            if (dataPoints[index] && dataPoints[index].attack_status === 'CYBER_ATTACK') {
+                                return '#dc2626';
+                            }
+                            return null;
+                        },
+                        borderWidth: function(context) {
+                            const index = context.dataIndex;
+                            const chartName = context.dataset.label || '';
+                            const dataPoints = chartDataPoints[chartName] || [];
+                            if (dataPoints[index] && dataPoints[index].attack_status === 'CYBER_ATTACK') {
+                                return 2;
+                            }
+                            return 1;
+                        }
+                    }, 
+                    line: { tension: 0.4 } 
+                },
+            };
+
+            const tempOptions = { ...chartOptions };
+            tempOptions.onClick = function(event, elements) {
+                handleChartClick(elements, 'temp');
+            };
+            monitorCharts.temp = new Chart(document.getElementById('monitor-temp-chart'), {
+                type: 'line',
+                data: { labels: [], datasets: [{ data: [], borderColor: '#ef4444', label: 'temp' }] },
+                options: tempOptions
+            });
+
+            const humidityOptions = { ...chartOptions };
+            humidityOptions.onClick = function(event, elements) {
+                handleChartClick(elements, 'humidity');
+            };
+            monitorCharts.humidity = new Chart(document.getElementById('monitor-humidity-chart'), {
+                type: 'line',
+                data: { 
+                    labels: [], 
+                    datasets: [{ 
+                        data: [], 
+                        borderColor: '#3b82f6', 
+                        label: 'humidity',
+                        pointBackgroundColor: [],
+                        pointBorderColor: [],
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    }] 
+                },
+                options: humidityOptions
+            });
+
+            const pressureOptions = { ...chartOptions };
+            pressureOptions.onClick = function(event, elements) {
+                handleChartClick(elements, 'pressure');
+            };
+            monitorCharts.pressure = new Chart(document.getElementById('monitor-pressure-chart'), {
+                type: 'line',
+                data: { 
+                    labels: [], 
+                    datasets: [{ 
+                        data: [], 
+                        borderColor: '#f59e0b', 
+                        label: 'pressure',
+                        pointBackgroundColor: [],
+                        pointBorderColor: [],
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    }] 
+                },
+                options: pressureOptions
+            });
+
+            const particlesOptions = { ...chartOptions };
+            particlesOptions.onClick = function(event, elements) {
+                handleChartClick(elements, 'particles');
+            };
+            monitorCharts.particles = new Chart(document.getElementById('monitor-particles-chart'), {
+                type: 'line',
+                data: { 
+                    labels: [], 
+                    datasets: [{ 
+                        data: [], 
+                        borderColor: '#10b981', 
+                        label: 'particles',
+                        pointBackgroundColor: [],
+                        pointBorderColor: [],
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    }] 
+                },
+                options: particlesOptions
+            });
+        }
+
+        // Update metric with smooth animation
+        function updateMetric(id, value, unit = '') {
+            const element = document.getElementById(id);
+            if (element) {
+                if (value === '--' || value === null || value === undefined) {
+                    element.textContent = '--';
+                } else {
+                    const numValue = typeof value === 'number' ? value : parseFloat(value);
+                    const newText = isNaN(numValue) ? '--' : numValue.toFixed(1) + (unit ? ' ' + unit : '');
+                    
+                    // Add animation class if value changed
+                    if (element.textContent !== newText) {
+                        element.classList.add('updating');
+                        element.textContent = newText;
+                        
+                        // Remove animation class after animation completes
+                        setTimeout(() => {
+                            element.classList.remove('updating');
+                        }, 500);
+                    } else {
+                        element.textContent = newText;
+                    }
+                }
+            }
+        }
+
+        // Check alerts (only trigger on state changes to prevent duplicate alerts)
+        function checkAlerts(data) {
+            const alerts = [];
+            const timestamp = new Date(data.timestamp).toLocaleTimeString();
+            const now = Date.now(); // Declare once at the top
+            
+            // Ensure numeric values
+            const temp = typeof data.temperature === 'number' ? data.temperature : parseFloat(data.temperature) || 0;
+            const hum = typeof data.humidity === 'number' ? data.humidity : parseFloat(data.humidity) || 0;
+            const press = typeof data.pressure === 'number' ? data.pressure : parseFloat(data.pressure) || 0;
+            const parts = typeof data.particles === 'number' ? data.particles : parseInt(data.particles) || 0;
+
+            // Temperature alert - only add alert on state change with cooldown
+            const tempAlert = temp < TEMP_MIN || temp > TEMP_MAX;
+            if (tempAlert && !alertStates.temperature && (now - lastAlertTime.temperature > ALERT_COOLDOWN_MS)) {
+                // State changed from normal to alert and cooldown expired
+                alerts.push({ type: 'warning', msg: `${timestamp}: Temperature ${temp.toFixed(1)}°C out of range [${TEMP_MIN}-${TEMP_MAX}°C]` });
+                alertStates.temperature = true;
+                lastAlertTime.temperature = now;
+            } else if (!tempAlert && alertStates.temperature) {
+                // State changed from alert to normal
+                alertStates.temperature = false;
+            }
+            
+            const tempCard = document.getElementById('temp-card');
+            const tempStatus = document.getElementById('temp-status');
+            if (tempAlert) {
+                if (tempCard) tempCard.classList.add('alert');
+                if (tempStatus) {
+                    tempStatus.textContent = 'Alert';
+                    tempStatus.className = 'metric-status status-alert';
+                }
+            } else {
+                if (tempCard) tempCard.classList.remove('alert', 'warning');
+                if (tempStatus) {
+                    tempStatus.textContent = 'Normal';
+                    tempStatus.className = 'metric-status status-normal';
+                }
+            }
+
+            // Humidity alert - only add alert on state change with cooldown
+            const humAlert = hum < HUM_MIN || hum > HUM_MAX;
+            if (humAlert && !alertStates.humidity && (now - lastAlertTime.humidity > ALERT_COOLDOWN_MS)) {
+                alerts.push({ type: 'warning', msg: `${timestamp}: Humidity ${hum.toFixed(1)}% out of range [${HUM_MIN}-${HUM_MAX}%]` });
+                alertStates.humidity = true;
+                lastAlertTime.humidity = now;
+            } else if (!humAlert && alertStates.humidity) {
+                alertStates.humidity = false;
+            }
+            
+            const humCard = document.getElementById('humidity-card');
+            const humStatus = document.getElementById('humidity-status');
+            if (humAlert) {
+                if (humCard) humCard.classList.add('alert');
+                if (humStatus) {
+                    humStatus.textContent = 'Alert';
+                    humStatus.className = 'metric-status status-alert';
+                }
+            } else {
+                if (humCard) humCard.classList.remove('alert', 'warning');
+                if (humStatus) {
+                    humStatus.textContent = 'Normal';
+                    humStatus.className = 'metric-status status-normal';
+                }
+            }
+
+            // Pressure alert - only add alert on state change with cooldown
+            const pressAlert = press < PRESS_MIN || press > PRESS_MAX;
+            if (pressAlert && !alertStates.pressure && (now - lastAlertTime.pressure > ALERT_COOLDOWN_MS)) {
+                alerts.push({ type: 'warning', msg: `${timestamp}: Pressure ${press.toFixed(1)}Pa out of range [${PRESS_MIN}-${PRESS_MAX}Pa]` });
+                alertStates.pressure = true;
+                lastAlertTime.pressure = now;
+            } else if (!pressAlert && alertStates.pressure) {
+                alertStates.pressure = false;
+            }
+            
+            const pressCard = document.getElementById('pressure-card');
+            const pressStatus = document.getElementById('pressure-status');
+            if (pressAlert) {
+                if (pressCard) pressCard.classList.add('alert');
+                if (pressStatus) {
+                    pressStatus.textContent = 'Alert';
+                    pressStatus.className = 'metric-status status-alert';
+                }
+            } else {
+                if (pressCard) pressCard.classList.remove('alert', 'warning');
+                if (pressStatus) {
+                    pressStatus.textContent = 'Normal';
+                    pressStatus.className = 'metric-status status-normal';
+                }
+            }
+
+            // Particles alert - only add alert on state change with cooldown
+            const partAlert = parts > PARTICLE_LIMIT;
+            if (partAlert && !alertStates.particles && (now - lastAlertTime.particles > ALERT_COOLDOWN_MS)) {
+                alerts.push({ type: 'alert', msg: `${timestamp}: High particle count: ${parts}` });
+                alertStates.particles = true;
+                lastAlertTime.particles = now;
+            } else if (!partAlert && alertStates.particles) {
+                alertStates.particles = false;
+            }
+            
+            const partCard = document.getElementById('particles-card');
+            const partStatus = document.getElementById('particles-status');
+            if (partAlert) {
+                if (partCard) partCard.classList.add('alert');
+                if (partStatus) {
+                    partStatus.textContent = 'Alert';
+                    partStatus.className = 'metric-status status-alert';
+                }
+            } else {
+                if (partCard) partCard.classList.remove('alert');
+                if (partStatus) {
+                    partStatus.textContent = 'Normal';
+                    partStatus.className = 'metric-status status-normal';
+                }
+            }
+
+            // Security alert - only add alert on state change with cooldown
+            const securityAlert = data.attack_status === 'CYBER_ATTACK';
+            if (securityAlert && !alertStates.security && (now - lastAlertTime.security > ALERT_COOLDOWN_MS)) {
+                alerts.push({ type: 'alert', msg: `${timestamp}: 🛡 SECURITY ALERT: Cyber attack detected!`, isCyberAttack: true });
+                alertStates.security = true;
+                lastAlertTime.security = now;
+            } else if (!securityAlert && alertStates.security) {
+                alertStates.security = false;
+            }
+            
+            if (securityAlert) {
+                document.getElementById('security-status-badge').textContent = 'Under Attack';
+                document.getElementById('security-status-badge').className = 'metric-status status-alert';
+            } else {
+                document.getElementById('security-status-badge').textContent = 'Secure';
+                document.getElementById('security-status-badge').className = 'metric-status status-normal';
+            }
+
+            return alerts;
+        }
+
+        // Switch between alert tabs
+        function switchAlertTab(tabType) {
+            // Hide all alert tab contents
+            document.querySelectorAll('.alert-tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all sub-tabs
+            document.querySelectorAll('.alert-sub-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            if (tabType === 'general') {
+                document.getElementById('general-alerts-content').classList.add('active');
+                document.getElementById('alert-tab-general').classList.add('active');
+            } else if (tabType === 'cyberattack') {
+                document.getElementById('cyberattack-alerts-content').classList.add('active');
+                document.getElementById('alert-tab-cyberattack').classList.add('active');
+            }
+        }
+
+        // Add alert
+        function addAlert(alert) {
+            allAlerts.unshift(alert);
+            if (allAlerts.length > 200) allAlerts = allAlerts.slice(0, 200);
+
+            // Determine if it's a cyber attack alert
+            const isCyberAttack = alert.isCyberAttack || 
+                (alert.msg && (alert.msg.includes('CYBER ATTACK') || 
+                               alert.msg.includes('SECURITY ALERT') || 
+                               alert.msg.includes('🛡')));
+            
+            // Add to appropriate list
+            const targetListId = isCyberAttack ? 'cyberattack-alerts-list' : 'general-alerts-list';
+            const alertsList = document.getElementById(targetListId);
+            
+            if (alertsList.querySelector('p')) {
+                alertsList.innerHTML = '';
+            }
+
+            alertsList.insertBefore(createAlertElement(alert), alertsList.firstChild);
+            while (alertsList.children.length > 100) {
+                alertsList.removeChild(alertsList.lastChild);
+            }
+
+            // Update alert counts
+            const totalAlerts = allAlerts.length;
+            const generalAlerts = allAlerts.filter(a => !(a.isCyberAttack || 
+                (a.msg && (a.msg.includes('CYBER ATTACK') || 
+                          a.msg.includes('SECURITY ALERT') || 
+                          a.msg.includes('🛡'))))).length;
+            const cyberAttackAlerts = allAlerts.filter(a => a.isCyberAttack || 
+                (a.msg && (a.msg.includes('CYBER ATTACK') || 
+                          a.msg.includes('SECURITY ALERT') || 
+                          a.msg.includes('🛡')))).length;
+            
+            document.getElementById('total-alerts').textContent = totalAlerts;
+            document.getElementById('general-alert-count').textContent = generalAlerts;
+            document.getElementById('cyberattack-alert-count').textContent = cyberAttackAlerts;
+            
+            // Show/hide badges
+            const badge = document.getElementById('alert-count-badge');
+            if (totalAlerts > 0) {
+                badge.textContent = totalAlerts;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+            
+            // Show/hide sub-tab badges
+            if (generalAlerts > 0) {
+                document.getElementById('general-alert-count').style.display = 'inline-block';
+            } else {
+                document.getElementById('general-alert-count').style.display = 'none';
+            }
+            
+            if (cyberAttackAlerts > 0) {
+                document.getElementById('cyberattack-alert-count').style.display = 'inline-block';
+            } else {
+                document.getElementById('cyberattack-alert-count').style.display = 'none';
+            }
+            
+            // Play sound alert based on alert type (play every time alert is added)
+            if (soundEnabled) {
+                // Initialize audio context on first alert (requires user interaction)
+                if (!audioContext) {
+                    initAudioContext();
+                }
+                
+                // Play sound every time an alert is added (not just on state change)
+                if (audioContext && audioContext.state !== 'closed') {
+                    // Check if it's a cyber attack alert
+                    if (alert.isCyberAttack || (alert.msg && (alert.msg.includes('CYBER ATTACK') || alert.msg.includes('SECURITY ALERT') || alert.msg.includes('🛡')))) {
+                        playCyberAttackSound();
+                    } else {
+                        // Normal alert (warning)
+                        playNormalAlertSound();
+                    }
+                }
+            }
+        }
+
+        function createAlertElement(alert) {
+            const div = document.createElement('div');
+            div.className = `alert-item ${alert.type}`;
+            div.innerHTML = `
+                <div>
+                    <i class="fas fa-exclamation-circle"></i> ${alert.msg}
+                </div>
+                <div class="alert-time">${new Date().toLocaleTimeString()}</div>
+            `;
+            return div;
+        }
+
+        // Update chart with smooth animation
+        function updateChart(chart, value, label, fullData, chartName) {
+            if (!chart || !chart.data || !chart.data.datasets || !chart.data.datasets[0]) {
+                console.warn(`Chart ${chartName} not properly initialized`);
+                return;
+            }
+            
+            // Ensure arrays exist
+            if (!chart.data.labels) chart.data.labels = [];
+            if (!chart.data.datasets[0].data) chart.data.datasets[0].data = [];
+            
+            chart.data.labels.push(label);
+            chart.data.datasets[0].data.push(value);
+            
+            // Store full data for this point
+            if (!chartDataPoints[chartName]) {
+                chartDataPoints[chartName] = [];
+            }
+            chartDataPoints[chartName].push(fullData);
+            
+            // Check if this is a cyber attack
+            const isCyberAttack = fullData.attack_status === 'CYBER_ATTACK';
+            
+            // Initialize point color arrays if needed
+            if (!chart.data.datasets[0].pointBackgroundColor || !Array.isArray(chart.data.datasets[0].pointBackgroundColor)) {
+                chart.data.datasets[0].pointBackgroundColor = [];
+            }
+            if (!chart.data.datasets[0].pointBorderColor || !Array.isArray(chart.data.datasets[0].pointBorderColor)) {
+                chart.data.datasets[0].pointBorderColor = [];
+            }
+            if (!chart.data.datasets[0].pointRadius || !Array.isArray(chart.data.datasets[0].pointRadius)) {
+                chart.data.datasets[0].pointRadius = [];
+            }
+            
+            // Set point colors and size based on cyber attack status
+            const pointIndex = chart.data.datasets[0].data.length - 1;
+            if (isCyberAttack) {
+                // Red color and larger size for cyber attacks
+                chart.data.datasets[0].pointBackgroundColor[pointIndex] = '#dc2626';
+                chart.data.datasets[0].pointBorderColor[pointIndex] = '#991b1b';
+                chart.data.datasets[0].pointRadius[pointIndex] = 6;
+                // Change line color to red for cyber attack segments
+                if (pointIndex > 0) {
+                    // Make the line segment red by temporarily changing border color
+                    const originalColor = chart.data.datasets[0].borderColor;
+                    chart.data.datasets[0].borderColor = '#dc2626';
+                    setTimeout(() => {
+                        chart.data.datasets[0].borderColor = originalColor;
+                    }, 100);
+                }
+            } else {
+                // Default colors based on chart type
+                const defaultColors = {
+                    'temp': '#ef4444',
+                    'humidity': '#3b82f6',
+                    'pressure': '#f59e0b',
+                    'particles': '#10b981'
+                };
+                const defaultColor = defaultColors[chartName] || '#3b82f6';
+                chart.data.datasets[0].pointBackgroundColor[pointIndex] = defaultColor;
+                chart.data.datasets[0].pointBorderColor[pointIndex] = defaultColor;
+                chart.data.datasets[0].pointRadius[pointIndex] = 3;
+            }
+            
+            // Don't limit data points - allow all data to be stored for scrolling
+            // Only limit display if needed for performance
+            const maxDataPoints = 200; // Store more data points for scrolling
+            if (chart.data.labels.length > maxDataPoints) {
+                chart.data.labels.shift();
+                chart.data.datasets[0].data.shift();
+                chartDataPoints[chartName].shift();
+                // Also shift color arrays
+                if (chart.data.datasets[0].pointBackgroundColor) {
+                    chart.data.datasets[0].pointBackgroundColor.shift();
+                }
+                if (chart.data.datasets[0].pointBorderColor) {
+                    chart.data.datasets[0].pointBorderColor.shift();
+                }
+                if (chart.data.datasets[0].pointRadius) {
+                    chart.data.datasets[0].pointRadius.shift();
+                }
+            }
+            
+            // Auto-scroll to latest data if user hasn't panned back
+            // Only auto-scroll if user is viewing recent data (within last 15 points)
+            const xScale = chart.scales.x;
+            if (xScale && chart.data.labels.length > 0) {
+                const dataLength = chart.data.labels.length;
+                const currentMax = xScale.max;
+                
+                // If user is viewing the latest data (within last 15 points), auto-scroll
+                // Otherwise, keep their current view (they're looking at historical data)
+                if (currentMax >= dataLength - 15 || currentMax === dataLength - 1) {
+                    // User is near the end, auto-scroll to latest
+                    // Reset zoom/pan to show latest data
+                    setTimeout(() => {
+                        if (chart && chart.resetZoom) {
+                            // Don't reset zoom, just ensure we're showing latest
+                            xScale.options.min = undefined;
+                            xScale.options.max = undefined;
+                            chart.update('none'); // Update without animation to avoid flicker
+                        }
+                    }, 50);
+                }
+            }
+            
+            // Use 'default' animation for smoother real-time updates
+            chart.update('active');
+        }
+
+        // Process data
+        function processData(data) {
+            const time = new Date(data.timestamp).toLocaleTimeString();
+
+            // Ensure all values are numbers
+            const temp = typeof data.temperature === 'number' ? data.temperature : parseFloat(data.temperature) || 0;
+            const hum = typeof data.humidity === 'number' ? data.humidity : parseFloat(data.humidity) || 0;
+            const press = typeof data.pressure === 'number' ? data.pressure : parseFloat(data.pressure) || 0;
+            const parts = typeof data.particles === 'number' ? data.particles : parseInt(data.particles) || 0;
+
+            // Add visual feedback to metric cards on update
+            const cards = ['temp-card', 'humidity-card', 'pressure-card', 'particles-card'];
+            cards.forEach(cardId => {
+                const card = document.getElementById(cardId);
+                if (card) {
+                    card.classList.add('updated');
+                    setTimeout(() => card.classList.remove('updated'), 600);
+                }
+            });
+
+            // Update metrics
+            updateMetric('temp-value', temp);
+            updateMetric('humidity-value', hum);
+            updateMetric('pressure-value', press);
+            updateMetric('particles-value', parts);
+
+            // Update status badges
+            const doorStatus = data.door_status || 'CLOSED';
+            document.getElementById('door-status').textContent = doorStatus;
+            document.getElementById('door-status').className = `badge ${doorStatus.toLowerCase() === 'open' ? 'badge-open' : 'badge-closed'}`;
+            
+            const securityStatus = data.attack_status === 'CYBER_ATTACK' ? '⚠️ ATTACK' : '✓ NORMAL';
+            document.getElementById('security-status').textContent = securityStatus;
+            document.getElementById('security-status').className = `badge ${data.attack_status === 'CYBER_ATTACK' ? 'badge-alert' : 'badge-normal'}`;
+
+            // Dashboard charts removed - only update monitor charts
+
+            // Initialize charts if they don't exist yet
+            if (Object.keys(monitorCharts).length === 0) {
+                initMonitorCharts();
+            }
+
+            // Update monitor charts with full data (only if charts exist)
+            if (monitorCharts.temp) {
+                updateChart(monitorCharts.temp, temp, time, data, 'temp');
+            }
+            if (monitorCharts.humidity) {
+                updateChart(monitorCharts.humidity, hum, time, data, 'humidity');
+            }
+            if (monitorCharts.pressure) {
+                updateChart(monitorCharts.pressure, press, time, data, 'pressure');
+            }
+            if (monitorCharts.particles) {
+                updateChart(monitorCharts.particles, parts, time, data, 'particles');
+            }
+
+            // Check for block notification
+            if (data.blocked && data.blocked.blocked) {
+                showBlockNotification(data.blocked);
+            }
+
+            // Check alerts with numeric values
+            const alertData = {
+                ...data,
+                temperature: temp,
+                humidity: hum,
+                pressure: press,
+                particles: parts
+            };
+            const alerts = checkAlerts(alertData);
+            alerts.forEach(addAlert);
+
+            // Add to logs
+            addLogRow(alertData);
+
+            // Update statistics
+            updateStatistics(alertData);
+        }
+
+        // Add log row
+        function addLogRow(data) {
+            const tbody = document.getElementById('logs-body');
+            if (!tbody) return;
+            
+            if (tbody.querySelector('td[colspan]')) {
+                tbody.innerHTML = '';
+            }
+
+            const row = document.createElement('tr');
+            const time = new Date(data.timestamp).toLocaleString();
+            const isCyberAttack = data.attack_status === 'CYBER_ATTACK';
+            const securityClass = isCyberAttack ? 'badge-alert' : 'badge-normal';
+            
+            // Add cyber attack row class for styling
+            if (isCyberAttack) {
+                row.classList.add('cyber-attack-row');
+            }
+            
+            // Ensure numeric values
+            const temp = typeof data.temperature === 'number' ? data.temperature : parseFloat(data.temperature) || 0;
+            const hum = typeof data.humidity === 'number' ? data.humidity : parseFloat(data.humidity) || 0;
+            const press = typeof data.pressure === 'number' ? data.pressure : parseFloat(data.pressure) || 0;
+            const parts = typeof data.particles === 'number' ? data.particles : parseInt(data.particles) || 0;
+            
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            const isAdmin = user.role === 'admin';
+            const userId = data.user_id || '--';
+            
+            row.innerHTML = `
+                <td>${time}</td>
+                <td>${isNaN(temp) ? '--' : temp.toFixed(1)}°C</td>
+                <td>${isNaN(hum) ? '--' : hum.toFixed(1)}%</td>
+                <td>${isNaN(press) ? '--' : press.toFixed(1)}Pa</td>
+                <td>${isNaN(parts) ? '--' : parts}</td>
+                <td><span class="badge ${(data.door_status || '').toLowerCase() === 'open' ? 'badge-open' : 'badge-closed'}">${data.door_status || 'CLOSED'}</span></td>
+                <td>${userId}</td>
+                <td><span class="badge ${securityClass}">${isCyberAttack ? '🛡️ CYBER ATTACK' : 'NORMAL'}</span></td>
+                <td>--</td>
+            `;
+            
+            tbody.insertBefore(row, tbody.firstChild);
+            while (tbody.children.length > 50) {
+                tbody.removeChild(tbody.lastChild);
+            }
+        }
+
+        // Load logs
+        async function loadLogs() {
+            try {
+                const response = await authenticatedFetch(`${API_URL}/logs`);
+                const logs = await response.json();
+                const tbody = document.getElementById('logs-body');
+                tbody.innerHTML = '';
+                
+                logs.slice(0, 50).forEach(log => addLogRow(log));
+            } catch (error) {
+                console.error('Failed to load logs:', error);
+            }
+        }
+
+        // Update statistics
+        async function updateStatistics(data) {
+            try {
+                const response = await authenticatedFetch(`${API_URL}/stats`);
+                const stats = await response.json();
+                
+                if (stats.total_records) {
+                    document.getElementById('stat-total').textContent = stats.total_records;
+                }
+                if (stats.avg_temperature) {
+                    document.getElementById('stat-avg-temp').textContent = stats.avg_temperature.toFixed(1) + '°C';
+                }
+                if (stats.avg_humidity) {
+                    document.getElementById('stat-avg-hum').textContent = stats.avg_humidity.toFixed(1) + '%';
+                }
+                if (stats.avg_pressure) {
+                    document.getElementById('stat-avg-press').textContent = stats.avg_pressure.toFixed(1) + 'Pa';
+                }
+                const generalAlerts = allAlerts.filter(a => !(a.isCyberAttack || 
+                    (a.msg && (a.msg.includes('CYBER ATTACK') || 
+                              a.msg.includes('SECURITY ALERT') || 
+                              a.msg.includes('🛡'))))).length;
+                const cyberAttackAlerts = allAlerts.filter(a => a.isCyberAttack || 
+                    (a.msg && (a.msg.includes('CYBER ATTACK') || 
+                              a.msg.includes('SECURITY ALERT') || 
+                              a.msg.includes('🛡')))).length;
+                const totalAlerts = allAlerts.length;
+                
+                document.getElementById('stat-total-alerts').textContent = totalAlerts;
+                
+                // Update KPI alerts card on dashboard
+                const kpiAlerts = document.getElementById('kpi-alerts');
+                if (kpiAlerts) {
+                    kpiAlerts.textContent = totalAlerts;
+                }
+                
+                // Update alert tab counts
+                if (document.getElementById('general-alert-count')) {
+                    document.getElementById('general-alert-count').textContent = generalAlerts;
+                }
+                if (document.getElementById('cyberattack-alert-count')) {
+                    document.getElementById('cyberattack-alert-count').textContent = cyberAttackAlerts;
+                }
+                if (stats.latest_timestamp) {
+                    document.getElementById('stat-latest').textContent = new Date(stats.latest_timestamp).toLocaleString();
+                }
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+        }
+
+        // Save settings
+        function saveSettings() {
+            TEMP_MIN = parseFloat(document.getElementById('setting-temp-min').value);
+            TEMP_MAX = parseFloat(document.getElementById('setting-temp-max').value);
+            HUM_MIN = parseFloat(document.getElementById('setting-hum-min').value);
+            HUM_MAX = parseFloat(document.getElementById('setting-hum-max').value);
+            PRESS_MIN = parseFloat(document.getElementById('setting-press-min').value);
+            PRESS_MAX = parseFloat(document.getElementById('setting-press-max').value);
+            PARTICLE_LIMIT = parseFloat(document.getElementById('setting-particle-limit').value);
+            
+            alert('Settings saved! Alert thresholds updated.');
+        }
+
+        // Handle chart click
+        function handleChartClick(elements, chartName) {
+            if (elements.length > 0) {
+                const element = elements[0];
+                const index = element.index;
+                const dataPoints = chartDataPoints[chartName] || [];
+                if (dataPoints[index]) {
+                    const data = dataPoints[index];
+                    if (data.attack_status === 'CYBER_ATTACK') {
+                        showAttackDetails(data, chartName);
+                    }
+                }
+            }
+        }
+
+        // Show block notification
+        function showBlockNotification(blockInfo) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #dc2626, #991b1b);
+                color: white;
+                padding: 20px 25px;
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(220, 38, 38, 0.4);
+                z-index: 10000;
+                max-width: 400px;
+                animation: slideInRight 0.3s ease-out;
+            `;
+            
+            const isPermanent = blockInfo.is_permanent;
+            const blockedUntil = blockInfo.blocked_until ? new Date(blockInfo.blocked_until).toLocaleString() : 'Permanent';
+            
+            notification.innerHTML = `
+                <div style="display: flex; align-items: start; gap: 15px;">
+                    <div style="font-size: 2em;">🚫</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 700; font-size: 1.1em; margin-bottom: 8px;">
+                            User Blocked: ${blockInfo.user_id}
+                        </div>
+                        <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 8px;">
+                            ${blockInfo.reason}
+                        </div>
+                        <div style="font-size: 0.85em; opacity: 0.8;">
+                            <div>Attack Count: ${blockInfo.attack_count}</div>
+                            <div>Block Type: ${isPermanent ? '🔒 Permanent' : '⏰ Temporary'}</div>
+                            ${!isPermanent ? `<div>Unblocks: ${blockedUntil}</div>` : ''}
+                        </div>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" 
+                            style="background: rgba(255,255,255,0.2); border: none; color: white; 
+                                   width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+                                   display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 10 seconds
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.style.animation = 'slideOutRight 0.3s ease-out';
+                    setTimeout(() => notification.remove(), 300);
+                }
+            }, 10000);
+        }
+
+        // Show attack details modal
+        async function showAttackDetails(data, chartName) {
+            const modal = document.getElementById('attack-modal');
+            const content = document.getElementById('attack-details-content');
+            
+            // Show loading state
+            content.innerHTML = '<div style="text-align: center; padding: 40px;"><i class="fas fa-spinner fa-spin" style="font-size: 2em;"></i><p>Loading attack details...</p></div>';
+            modal.style.display = 'flex';
+            
+            try {
+                // Try to fetch detailed attack information
+                let attackDetails = null;
+                if (data.id || data.record_id) {
+                    try {
+                        const response = await authenticatedFetch(`${API_URL}/api/security/attack-details/${data.id || data.record_id}`);
+                        if (response.ok) {
+                            attackDetails = await response.json();
+                        }
+                    } catch (e) {
+                        console.warn('Could not fetch attack details:', e);
+                    }
+                }
+                
+                const timestamp = new Date(data.timestamp).toLocaleString();
+                const indicators = data.attack_indicators || attackDetails?.log?.attack_indicators || [];
+                const blockInfo = data.blocked || attackDetails?.block || null;
+                const incident = attackDetails?.incident || null;
+                const attackFreq = attackDetails?.attack_frequency || 0;
+                
+                // Format indicator names for display
+                const formatIndicator = (indicator) => {
+                    return indicator.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                };
+                
+                content.innerHTML = `
+                    <div class="attack-details-section">
+                        <h3><i class="fas fa-clock"></i> Attack Information</h3>
+                        <div class="attack-info-grid">
+                            <div class="attack-info-item alert">
+                                <div class="attack-info-label">Timestamp</div>
+                                <div class="attack-info-value">${timestamp}</div>
+                            </div>
+                            <div class="attack-info-item alert">
+                                <div class="attack-info-label">Chart</div>
+                                <div class="attack-info-value">${chartName ? chartName.charAt(0).toUpperCase() + chartName.slice(1) : 'N/A'}</div>
+                            </div>
+                            <div class="attack-info-item">
+                                <div class="attack-info-label">Temperature</div>
+                                <div class="attack-info-value">${typeof data.temperature === 'number' ? data.temperature.toFixed(1) : data.temperature}°C</div>
+                            </div>
+                            <div class="attack-info-item">
+                                <div class="attack-info-label">Humidity</div>
+                                <div class="attack-info-value">${typeof data.humidity === 'number' ? data.humidity.toFixed(1) : data.humidity}%</div>
+                            </div>
+                            <div class="attack-info-item">
+                                <div class="attack-info-label">Pressure</div>
+                                <div class="attack-info-value">${typeof data.pressure === 'number' ? data.pressure.toFixed(1) : data.pressure}Pa</div>
+                            </div>
+                            <div class="attack-info-item">
+                                <div class="attack-info-label">Particles</div>
+                                <div class="attack-info-value">${data.particles}</div>
+                            </div>
+                            <div class="attack-info-item">
+                                <div class="attack-info-label">Door Status</div>
+                                <div class="attack-info-value">${data.door_status || 'N/A'}</div>
+                            </div>
+                            <div class="attack-info-item">
+                                <div class="attack-info-label">User ID</div>
+                                <div class="attack-info-value">${data.user_id || 'N/A'}</div>
+                            </div>
+                            ${attackFreq > 0 ? `
+                            <div class="attack-info-item alert">
+                                <div class="attack-info-label">Attack Frequency</div>
+                                <div class="attack-info-value">${attackFreq} attacks</div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    <div class="attack-details-section">
+                        <h3><i class="fas fa-exclamation-triangle"></i> Attack Indicators (${indicators.length})</h3>
+                        <div class="attack-indicators">
+                            ${indicators.length > 0 ? indicators.map(ind => `
+                                <div class="attack-indicator">
+                                    <i class="fas fa-shield-virus"></i>
+                                    <span>${formatIndicator(ind)}</span>
+                                </div>
+                            `).join('') : '<p style="color: var(--text-secondary); padding: 15px;">No specific indicators available</p>'}
+                        </div>
+                    </div>
+                    ${blockInfo ? `
+                    <div class="attack-details-section" style="background: rgba(220, 38, 38, 0.1); border-left: 4px solid #dc2626;">
+                        <h3><i class="fas fa-ban"></i> Block Information</h3>
+                        <div class="attack-info-grid">
+                            <div class="attack-info-item alert">
+                                <div class="attack-info-label">Block Status</div>
+                                <div class="attack-info-value">🚫 BLOCKED</div>
+                            </div>
+                            <div class="attack-info-item">
+                                <div class="attack-info-label">Block Type</div>
+                                <div class="attack-info-value">${blockInfo.is_permanent ? '🔒 Permanent' : '⏰ Temporary'}</div>
+                            </div>
+                            <div class="attack-info-item">
+                                <div class="attack-info-label">Attack Count</div>
+                                <div class="attack-info-value">${blockInfo.attack_count || 'N/A'}</div>
+                            </div>
+                            ${blockInfo.blocked_until ? `
+                            <div class="attack-info-item">
+                                <div class="attack-info-label">Unblocks At</div>
+                                <div class="attack-info-value">${new Date(blockInfo.blocked_until).toLocaleString()}</div>
+                            </div>
+                            ` : ''}
+                            <div class="attack-info-item" style="grid-column: 1 / -1;">
+                                <div class="attack-info-label">Block Reason</div>
+                                <div class="attack-info-value" style="font-size: 0.9em; color: var(--text-secondary);">${blockInfo.reason || 'N/A'}</div>
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
+                    ${incident ? `
+                    <div class="attack-details-section">
+                        <h3><i class="fas fa-file-alt"></i> Security Incident</h3>
+                        <div class="attack-info-grid">
+                            <div class="attack-info-item">
+                                <div class="attack-info-label">Incident ID</div>
+                                <div class="attack-info-value">#${incident.id}</div>
+                            </div>
+                            <div class="attack-info-item">
+                                <div class="attack-info-label">Severity</div>
+                                <div class="attack-info-value">${incident.severity || 'HIGH'}</div>
+                            </div>
+                            <div class="attack-info-item">
+                                <div class="attack-info-label">Status</div>
+                                <div class="attack-info-value">${incident.status || 'ACTIVE'}</div>
+                            </div>
+                            <div class="attack-info-item" style="grid-column: 1 / -1;">
+                                <div class="attack-info-label">Action Taken</div>
+                                <div class="attack-info-value" style="font-size: 0.9em; color: var(--text-secondary);">${incident.action_taken || 'N/A'}</div>
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
+                `;
+                
+                modal.style.display = 'flex';
+                modal.classList.add('active');
+            } catch (error) {
+                console.error('Error loading attack details:', error);
+                content.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--danger-color);">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2em; margin-bottom: 15px;"></i>
+                        <p>Error loading attack details. Please try again.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Close attack details modal
+        function closeAttackModal() {
+            const modal = document.getElementById('attack-modal');
+            modal.classList.remove('active');
+            modal.style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('attack-modal');
+            if (event.target === modal) {
+                closeAttackModal();
+            }
+        });
+
+        // Export data
+        async function exportData() {
+            try {
+                const response = await authenticatedFetch(`${API_URL}/logs`);
+                const logs = await response.json();
+                
+                const csv = [
+                    ['Timestamp', 'Temperature', 'Humidity', 'Pressure', 'Particles', 'Door Status', 'User ID', 'Attack Status'],
+                    ...logs.map(log => [
+                        log.timestamp,
+                        log.temperature,
+                        log.humidity,
+                        log.pressure,
+                        log.particles,
+                        log.door_status,
+                        log.user_id,
+                        log.attack_status
+                    ])
+                ].map(row => row.join(',')).join('\n');
+                
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `cleanroom_data_${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+            } catch (error) {
+                console.error('Export failed:', error);
+                alert('Export failed. Please try again.');
+            }
+        }
+
+        // WebSocket connection
+        function connectWebSocket() {
+            ws = new WebSocket(WS_URL);
+
+            ws.onopen = () => {
+                console.log('WebSocket connected');
+                document.getElementById('status-text').textContent = 'Connected';
+                document.getElementById('status-dot').className = 'status-dot connected';
+                document.getElementById('sys-ws').textContent = 'Connected';
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    processData(data);
+                } catch (error) {
+                    console.error('Failed to parse message:', error);
+                }
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+
+            ws.onclose = () => {
+                console.log('WebSocket disconnected, reconnecting...');
+                document.getElementById('status-text').textContent = 'Disconnected';
+                document.getElementById('status-dot').className = 'status-dot disconnected';
+                document.getElementById('sys-ws').textContent = 'Disconnected';
+                setTimeout(connectWebSocket, 3000);
+            };
+
+            setInterval(() => {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send('ping');
+                }
+            }, 30000);
+        }
+
+        // Update current time
+        function updateTime() {
+            document.getElementById('current-time').textContent = new Date().toLocaleTimeString();
+        }
+
+        // Initialize audio context on first user interaction
+        document.addEventListener('click', function() {
+            if (!audioContext) {
+                initAudioContext();
+            } else if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }, { once: false });
+        
+        document.addEventListener('keydown', function() {
+            if (!audioContext) {
+                initAudioContext();
+            } else if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }, { once: false });
+
+        // Room Management Functions
+        async function loadRooms() {
+            try {
+                const response = await authenticatedFetch('/api/rooms');
+                if (!response.ok) throw new Error('Failed to load rooms');
+                const rooms = await response.json();
+                
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                const isAdmin = user.role === 'admin';
+                
+                if (isAdmin) {
+                    document.getElementById('rooms-admin-section').style.display = 'block';
+                    document.getElementById('rooms-user-section').style.display = 'none';
+                    displayRoomsAdmin(rooms);
+                } else {
+                    document.getElementById('rooms-admin-section').style.display = 'none';
+                    document.getElementById('rooms-user-section').style.display = 'block';
+                    // Find user's room
+                    const userRoom = rooms.find(r => r.id === user.room_id);
+                    if (userRoom) {
+                        displayUserRoom(userRoom);
+                    } else {
+                        document.getElementById('rooms-grid-user').innerHTML = `
+                            <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                <i class="fas fa-door-open" style="font-size: 3em; margin-bottom: 20px;"></i>
+                                <h3>No Room Assigned</h3>
+                                <p>You have not been assigned to a room yet. Please contact an administrator.</p>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading rooms:', error);
+            }
+        }
+        
+        function displayRoomsAdmin(rooms) {
+            const container = document.getElementById('rooms-grid-admin');
+            if (rooms.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                        <i class="fas fa-door-open" style="font-size: 3em; margin-bottom: 20px;"></i>
+                        <h3>No Rooms Created</h3>
+                        <p>Create your first room to get started.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = rooms.map(room => `
+                <div class="room-card">
+                    <div class="room-header">
+                        <h3><i class="fas fa-door-open"></i> ${escapeHtml(room.room_name)}</h3>
+                        <button class="btn btn-danger btn-sm" onclick="deleteRoom(${room.id}, '${escapeHtml(room.room_name)}')" title="Delete Room">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    ${room.description ? `<p style="color: var(--text-secondary); margin: 10px 0;">${escapeHtml(room.description)}</p>` : ''}
+                    <div style="margin-top: 15px; font-size: 0.9em; color: var(--text-secondary);">
+                        <i class="far fa-calendar"></i> Created: ${new Date(room.created_at).toLocaleDateString()}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function displayUserRoom(room) {
+            const container = document.getElementById('rooms-grid-user');
+            container.innerHTML = `
+                <div class="room-card">
+                    <div class="room-header">
+                        <h3><i class="fas fa-door-open"></i> ${escapeHtml(room.room_name)}</h3>
+                        <span class="badge badge-normal">Your Room</span>
+                    </div>
+                    ${room.description ? `<p style="color: var(--text-secondary); margin: 10px 0;">${escapeHtml(room.description)}</p>` : ''}
+                    <div style="margin-top: 15px; font-size: 0.9em; color: var(--text-secondary);">
+                        <i class="far fa-calendar"></i> Created: ${new Date(room.created_at).toLocaleDateString()}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function showCreateRoomModal() {
+            document.getElementById('create-room-modal').style.display = 'flex';
+        }
+        
+        function closeCreateRoomModal() {
+            document.getElementById('create-room-modal').style.display = 'none';
+            document.getElementById('create-room-form').reset();
+        }
+        
+        async function createRoom(event) {
+            event.preventDefault();
+            const name = document.getElementById('room-name-input').value.trim();
+            const description = document.getElementById('room-description-input').value.trim();
+            
+            try {
+                const response = await authenticatedFetch('/api/rooms', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        room_name: name,
+                        description: description || null
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to create room');
+                }
+                
+                closeCreateRoomModal();
+                loadRooms();
+                alert('Room created successfully!');
+            } catch (error) {
+                alert('Error creating room: ' + error.message);
+            }
+        }
+        
+        async function deleteRoom(roomId, roomName) {
+            if (!confirm(`Are you sure you want to delete "${roomName}"? This action cannot be undone.`)) {
+                return;
+            }
+            
+            try {
+                const response = await authenticatedFetch(`/api/rooms/${roomId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to delete room');
+                }
+                
+                loadRooms();
+                alert('Room deleted successfully!');
+            } catch (error) {
+                alert('Error deleting room: ' + error.message);
+            }
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Card flip function
+        function flipCard(cardId) {
+            const card = document.getElementById(cardId);
+            if (card) {
+                card.classList.toggle('flipped');
+            }
+        }
+        
+        // Block User Functions
+        function showBlockUserModal(userId) {
+            if (userId) {
+                document.getElementById('block-user-id-input').value = userId;
+            } else {
+                document.getElementById('block-user-id-input').value = '';
+            }
+            document.getElementById('block-type-input').value = 'temporary';
+            document.getElementById('block-duration-input').value = 60;
+            document.getElementById('block-reason-input').value = '';
+            toggleBlockDuration();
+            document.getElementById('block-user-modal').style.display = 'flex';
+        }
+        
+        function showBlockUserModalFromTab() {
+            showBlockUserModal(null);
+        }
+        
+        function closeBlockUserModal() {
+            document.getElementById('block-user-modal').style.display = 'none';
+            document.getElementById('block-user-form').reset();
+        }
+        
+        function toggleBlockDuration() {
+            const blockType = document.getElementById('block-type-input').value;
+            const durationGroup = document.getElementById('block-duration-group');
+            if (blockType === 'permanent') {
+                durationGroup.style.display = 'none';
+            } else {
+                durationGroup.style.display = 'block';
+            }
+        }
+        
+        async function blockUserManually(event) {
+            event.preventDefault();
+            const userId = document.getElementById('block-user-id-input').value;
+            const blockType = document.getElementById('block-type-input').value;
+            const isPermanent = blockType === 'permanent';
+            const duration = parseInt(document.getElementById('block-duration-input').value) || 60;
+            const reason = document.getElementById('block-reason-input').value.trim();
+            
+            if (!reason) {
+                alert('Please enter a reason for blocking the user.');
+                return;
+            }
+            
+            if (!isPermanent && duration < 1) {
+                alert('Duration must be at least 1 minute.');
+                return;
+            }
+            
+            try {
+                const response = await authenticatedFetch(`${API_URL}/api/security/block-user`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        user_id: userId,
+                        is_permanent: isPermanent,
+                        reason: reason,
+                        duration_minutes: isPermanent ? null : duration
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    alert(`Error: ${error.detail || 'Failed to block user'}`);
+                    return;
+                }
+                
+                const result = await response.json();
+                alert(`✅ ${result.message}`);
+                closeBlockUserModal();
+                
+                // Refresh blocked users list if on that tab
+                if (document.getElementById('blocked-attacks').classList.contains('active')) {
+                    loadBlockedUsers();
+                }
+                
+                // Refresh logs
+                loadLogs();
+            } catch (error) {
+                console.error('Error blocking user:', error);
+                alert('Error blocking user. Please try again.');
+            }
+        }
+
+        // Initialize
+        initCharts();
+        loadLogs();
+        connectWebSocket();
+        updateStatistics();
+        setInterval(updateTime, 1000);
+        setInterval(loadLogs, 30000);
+        setInterval(updateStatistics, 60000);
+        
+        // Try to initialize charts after a short delay (in case DOM is ready)
+        setTimeout(() => {
+            if (Object.keys(monitorCharts).length === 0) {
+                initMonitorCharts();
+            }
+        }, 500);
+    </script>
+</body>
+</html>
